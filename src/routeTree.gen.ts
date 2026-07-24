@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JdRouteImport } from './routes/jd'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as ResumeRouteImport } from './routes/resume'
+import { Route as ResumeBuilderRouteImport } from './routes/resume-builder'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SkillMatchRouteImport } from './routes/skill-match'
 import { Route as TalentCheckRouteImport } from './routes/talent-check'
@@ -27,14 +30,29 @@ const JdRoute = JdRouteImport.update({
   path: '/jd',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResumeRoute = ResumeRouteImport.update({
   id: '/resume',
   path: '/resume',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeBuilderRoute = ResumeBuilderRouteImport.update({
+  id: '/resume-builder',
+  path: '/resume-builder',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -56,8 +74,11 @@ const TalentCheckRoute = TalentCheckRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jd': typeof JdRoute
+  '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
   '/resume': typeof ResumeRoute
+  '/resume-builder': typeof ResumeBuilderRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skill-match': typeof SkillMatchRoute
   '/talent-check': typeof TalentCheckRoute
@@ -65,8 +86,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/jd': typeof JdRoute
+  '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
   '/resume': typeof ResumeRoute
+  '/resume-builder': typeof ResumeBuilderRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skill-match': typeof SkillMatchRoute
   '/talent-check': typeof TalentCheckRoute
@@ -75,8 +99,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/jd': typeof JdRoute
+  '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
   '/resume': typeof ResumeRoute
+  '/resume-builder': typeof ResumeBuilderRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/skill-match': typeof SkillMatchRoute
   '/talent-check': typeof TalentCheckRoute
@@ -86,8 +113,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/jd'
+    | '/login'
     | '/profile'
+    | '/report'
     | '/resume'
+    | '/resume-builder'
     | '/sitemap.xml'
     | '/skill-match'
     | '/talent-check'
@@ -95,8 +125,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/jd'
+    | '/login'
     | '/profile'
+    | '/report'
     | '/resume'
+    | '/resume-builder'
     | '/sitemap.xml'
     | '/skill-match'
     | '/talent-check'
@@ -104,8 +137,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/jd'
+    | '/login'
     | '/profile'
+    | '/report'
     | '/resume'
+    | '/resume-builder'
     | '/sitemap.xml'
     | '/skill-match'
     | '/talent-check'
@@ -114,8 +150,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JdRoute: typeof JdRoute
+  LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
+  ReportRoute: typeof ReportRoute
   ResumeRoute: typeof ResumeRoute
+  ResumeBuilderRoute: typeof ResumeBuilderRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SkillMatchRoute: typeof SkillMatchRoute
   TalentCheckRoute: typeof TalentCheckRoute
@@ -137,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -144,11 +190,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resume': {
       id: '/resume'
       path: '/resume'
       fullPath: '/resume'
       preLoaderRoute: typeof ResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume-builder': {
+      id: '/resume-builder'
+      path: '/resume-builder'
+      fullPath: '/resume-builder'
+      preLoaderRoute: typeof ResumeBuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -178,8 +238,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JdRoute: JdRoute,
+  LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
+  ReportRoute: ReportRoute,
   ResumeRoute: ResumeRoute,
+  ResumeBuilderRoute: ResumeBuilderRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SkillMatchRoute: SkillMatchRoute,
   TalentCheckRoute: TalentCheckRoute,

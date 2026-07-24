@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useRehox } from "@/lib/rehox/store";
+import { useState } from "react";
+import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import type { ReactNode } from "react";
 
 const NODES = [
@@ -8,6 +9,8 @@ const NODES = [
   { key: "profile", label: "Profile", to: "/profile" as const },
   { key: "talent", label: "Talent Check", to: "/talent-check" as const },
   { key: "match", label: "Skill Match", to: "/skill-match" as const },
+  { key: "report", label: "Report", to: "/report" as const },
+  { key: "ats", label: "ATS Resume", to: "/resume-builder" as const },
 ];
 
 function Wordmark() {
@@ -27,7 +30,15 @@ function Wordmark() {
 
 function Pipeline() {
   const { jd, resume, profile, talentCheck, skillMatch } = useRehox((s) => s);
-  const ready = { jd: !!jd, resume: !!resume, profile: !!profile, talent: !!talentCheck, match: !!skillMatch };
+  const ready = {
+    jd: !!jd,
+    resume: !!resume,
+    profile: !!profile,
+    talent: !!talentCheck,
+    match: !!skillMatch,
+    report: !!(talentCheck || skillMatch),
+    ats: !!profile,
+  };
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav aria-label="RehoX pipeline" className="flex items-center gap-2 md:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -39,7 +50,7 @@ function Pipeline() {
             <Link
               to={n.to}
               className={[
-                "group flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                "group flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
                 active
                   ? "border-brass/60 bg-brass/10 text-brass rehox-pulse-once"
                   : current
@@ -56,7 +67,7 @@ function Pipeline() {
               <span
                 aria-hidden
                 className={[
-                  "hidden md:block h-px w-6 transition-colors",
+                  "hidden md:block h-px w-4 transition-colors",
                   active ? "bg-brass/60" : "bg-line",
                 ].join(" ")}
               />
@@ -75,7 +86,14 @@ function Pipeline() {
 function UserBadge() {
   const profile = useRehox((s) => s.profile);
   const resume = useRehox((s) => s.resume);
-  const rawName = profile?.name || resume?.name || (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
+  const userSession = useRehox((s) => s.userSession);
+  const savedAnalyses = useRehox((s) => s.savedAnalyses);
+  const activeAnalysisId = useRehox((s) => s.activeAnalysisId);
+
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const rawName = userSession?.name || profile?.name || resume?.name || (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
   
   const initials = rawName
     ? rawName
@@ -86,16 +104,113 @@ function UserBadge() {
         .join("")
     : "RX";
 
-  const label = rawName ? rawName : "candidate.local";
+  const label = rawName ? rawName : "Candidate Session";
+
+  function handleSaveAnalysis() {
+    rehoxStore.saveCurrentAnalysis();
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 1500);
+  }
 
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="h-8 w-8 rounded-full border border-brass/40 bg-brass/10 grid place-items-center mono text-xs font-bold text-brass shadow-sm">
-        {initials}
-      </div>
-      <div className="hidden md:block text-xs font-medium text-ink-text mono truncate max-w-[150px]">
-        {label}
-      </div>
+    <div className="flex items-center gap-3 relative">
+      {/* Save Flow Button */}
+      <button
+        onClick={handleSaveAnalysis}
+        className="hidden md:flex items-center gap-1.5 rounded-lg border border-brass/40 bg-brass/10 px-2.5 py-1 text-xs font-semibold text-brass hover:bg-brass hover:text-primary-foreground transition-all"
+        title="Save current evaluation flow"
+      >
+        <span>{saveSuccess ? "Saved! ✓" : "💾 Save Flow"}</span>
+      </button>
+
+      {/* History Drawer Trigger */}
+      <button
+        onClick={() => setShowDrawer(!showDrawer)}
+        className="flex items-center gap-2 group hover:opacity-80 transition-opacity"
+      >
+        <div className="h-8 w-8 rounded-full border border-brass/40 bg-brass/10 grid place-items-center mono text-xs font-bold text-brass shadow-sm">
+          {initials}
+        </div>
+        <div className="hidden md:block text-left">
+          <div className="text-xs font-medium text-ink-text mono truncate max-w-[130px]">
+            {label}
+          </div>
+          <div className="text-[10px] text-brass mono">
+            {savedAnalyses.length} saved {savedAnalyses.length === 1 ? "flow" : "flows"}
+          </div>
+        </div>
+      </button>
+
+      <Link
+        to="/login"
+        className="hidden lg:block text-xs font-medium text-muted-text hover:text-ink-text mono"
+      >
+        {userSession?.is_guest ? "Login" : "Account"}
+      </Link>
+
+      {/* Saved Analyses Dropdown Menu */}
+      {showDrawer && (
+        <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl border border-line bg-panel p-4 shadow-2xl space-y-3">
+          <div className="flex items-center justify-between border-b border-line/50 pb-2">
+            <span className="mono text-[11px] font-bold uppercase tracking-widest text-brass">
+              Saved Analyses History
+            </span>
+            <button
+              onClick={() => setShowDrawer(false)}
+              className="text-xs text-muted-text hover:text-ink-text font-bold"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            {savedAnalyses.length === 0 ? (
+              <div className="text-xs text-muted-text py-3 text-center italic">
+                No saved flows yet. Click "Save Flow" to keep analysis runs.
+              </div>
+            ) : (
+              savedAnalyses.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    rehoxStore.loadAnalysis(item.id);
+                    setShowDrawer(false);
+                  }}
+                  className={`w-full text-left p-2.5 rounded-xl border transition-colors ${
+                    item.id === activeAnalysisId
+                      ? "border-brass bg-brass/10 text-brass font-bold"
+                      : "border-line/60 bg-ink/60 text-ink-text hover:border-line"
+                  }`}
+                >
+                  <div className="text-xs font-bold truncate">{item.title}</div>
+                  <div className="mono text-[10px] text-muted-text mt-0.5">
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="border-t border-line/50 pt-2 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                rehoxStore.createNewAnalysis();
+                setShowDrawer(false);
+              }}
+              className="rounded-lg bg-brass px-3 py-1.5 text-xs font-bold text-primary-foreground hover:brightness-110"
+            >
+              + New Flow
+            </button>
+            <Link
+              to="/login"
+              onClick={() => setShowDrawer(false)}
+              className="rounded-lg border border-line bg-ink px-3 py-1.5 text-xs font-semibold text-center text-ink-text hover:border-brass"
+            >
+              Auth / Sign In
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

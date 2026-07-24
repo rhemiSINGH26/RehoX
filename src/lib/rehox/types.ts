@@ -135,3 +135,47 @@ export interface SkillMatchResult {
   summary?: string;
   category_scores?: SkillMatchCategoryScore[];
 }
+
+export interface SavedAnalysis {
+  id: string;
+  title: string;
+  company: string;
+  role: string;
+  created_at: string;
+  jd: ParsedSource | null;
+  resume: ParsedSource | null;
+  profile: Profile | null;
+  talentCheck: TalentCheckResult | null;
+  skillMatch: SkillMatchResult | null;
+}
+
+export interface ATSResume {
+  id: string;
+  title: string;
+  candidate_name: string;
+  email: string;
+  phone?: string;
+  summary: string;
+  skills: string[];
+  experience: {
+    company: string;
+    role: string;
+    dates: string;
+    bullets: string[];
+  }[];
+  education: {
+    institution: string;
+    degree: string;
+    year: string;
+    gpa?: string;
+  }[];
+  ats_score?: number;
+  updated_at?: string;
+}
+
+export interface UserSession {
+  user_id: string;
+  email: string;
+  name: string;
+  is_guest: boolean;
+}
