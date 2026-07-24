@@ -56,9 +56,16 @@ export interface TalentCheckResult {
   readiness_score: number;
 }
 
+export interface SkillMatchCategoryScore {
+  category: string;
+  score: number;
+}
+
 export interface SkillMatchResult {
   jd_source_file: string;
   match_score: number;
   matched_skills: Skill[];
   missing_skills: Skill[];
+  summary?: string;
+  category_scores?: SkillMatchCategoryScore[];
 }
