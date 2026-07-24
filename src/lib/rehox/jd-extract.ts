@@ -3,75 +3,94 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
 import type { ParsedSource, Skill, CategoryCode } from "./types";
 
-// ── Zod schema ────────────────────────────────────────────────────────────────
+// ── Zod schema matching the shared data contract ────────────────────────────
 
 const VALID_CATEGORY_CODES: CategoryCode[] = [
-  "DSA", "COD", "OOD", "APTI", "COMM", "AI",
-  "CLOUD", "SQL", "SWE", "SYSD", "NETW", "OS", "OTHER",
+  "DSA",
+  "COD",
+  "OOD",
+  "APTI",
+  "COMM",
+  "AI",
+  "CLOUD",
+  "SQL",
+  "SWE",
+  "SYSD",
+  "NETW",
+  "OS",
+  "OTHER",
 ];
 
 const SkillSchema = z.object({
   skill_name: z.string(),
-  category_code: z.enum(["DSA", "COD", "OOD", "APTI", "COMM", "AI", "CLOUD", "SQL", "SWE", "SYSD", "NETW", "OS", "OTHER"]),
+  category_code: z.enum([
+    "DSA",
+    "COD",
+    "OOD",
+    "APTI",
+    "COMM",
+    "AI",
+    "CLOUD",
+    "SQL",
+    "SWE",
+    "SYSD",
+    "NETW",
+    "OS",
+    "OTHER",
+  ]),
   evidence: z.string(),
   confidence: z.enum(["high", "medium", "low"]),
 });
 
-const ParsedResumeSchema = z.object({
-  source_type: z.literal("resume"),
+const ParsedSourceSchema = z.object({
+  source_type: z.literal("jd"),
   source_file: z.string(),
   company: z.string(),
   role: z.string(),
-  education: z.string().optional(),
-  projects: z.array(z.string()).optional(),
-  experience: z.array(z.string()).optional(),
   skills: z.array(SkillSchema),
 });
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a talent intelligence engine. Your task is to extract structured skill data from a candidate's resume.
+const SYSTEM_PROMPT = `You are a talent intelligence engine. Your task is to extract a structured skill list from a Job Description (JD).
 
 RADIX skill categories (use ONLY these codes):
 - COD  : Coding / Programming languages
 - DSA  : Data Structures & Algorithms
 - OOD  : Object-Oriented Design & patterns
-- APTI : Quantitative Aptitude / Logical reasoning / Statistics / Math
-- COMM : Communication & collaboration / leadership
-- AI   : AI / ML / Data Science / BI tools / Analytics
+- APTI : Quantitative Aptitude / Logical reasoning / Statistics
+- COMM : Communication & collaboration
+- AI   : AI / ML / Data Science / BI tools
 - CLOUD: Cloud platforms (AWS, GCP, Azure, etc.)
-- SQL  : SQL / Databases / Data modeling / NoSQL
-- SWE  : Software Engineering practices (CI/CD, testing, Agile, code review)
+- SQL  : SQL / Databases / Data modeling
+- SWE  : Software Engineering practices (CI/CD, testing, Agile, SDLC)
 - SYSD : System Design / Distributed systems / Architecture
-- NETW : Networking / Protocols / TCP/IP
-- OS   : Operating Systems / Linux / Shell scripting
+- NETW : Networking / Protocols
+- OS   : Operating Systems / Linux / Kernel / Shell
 - OTHER: Anything that does not fit the above
 
 Rules:
-1. Infer skills from the resume's projects, experience, and descriptions — not just a skills section.
-2. Evidence should quote or paraphrase the resume line that reveals the skill. Keep it short.
-3. Confidence:
-   - "high" = used in production work or 1+ years of experience
-   - "medium" = used in projects or coursework
-   - "low"  = mentioned once or listed without context
-4. Extract role from the most recent job title or stated objective.
-5. Do not repeat the same skill_name twice.
-6. For "company", return "" (empty string) since this is a resume.
+1. Map skills to categories by meaning, not just keywords. "Build fault-tolerant pipelines" → SYSD.
+2. Focus on "Key Responsibilities" and "What We're Looking For" sections — they carry the strongest signal.
+3. Use evidence: quote the exact JD phrase that reveals the skill. Keep it short (under 80 chars).
+4. Confidence:
+   - "high" = explicitly stated as required/must-have
+   - "medium" = implied or preferred
+   - "low"  = nice-to-have or vaguely mentioned
+5. Named technologies count as skills (e.g., "Kubernetes" → CLOUD, "Redis" → SQL/COD by context).
+6. Do not repeat the same skill_name twice.
 
 Output ONLY valid JSON matching this schema exactly:
 {
-  "source_type": "resume",
+  "source_type": "jd",
   "source_file": "<filename>",
-  "company": "",
-  "role": "<inferred role or most recent title>",
-  "education": "<highest degree and institution>",
-  "projects": ["<short project description>", ...],
-  "experience": ["<role at company, duration>", ...],
+  "company": "<company name or 'Unknown'>",
+  "role": "<role title>",
   "skills": [
     {
       "skill_name": "<concise skill name>",
       "category_code": "<one of the codes above>",
-      "evidence": "<resume phrase that shows this skill>",
+      "evidence": "<quoted JD phrase>",
       "confidence": "high" | "medium" | "low"
     }
   ]
@@ -79,10 +98,10 @@ Output ONLY valid JSON matching this schema exactly:
 
 // ── Server function ───────────────────────────────────────────────────────────
 
-export const extractResumeSkills = createServerFn({ method: "POST" })
+export const extractJdSkills = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      text: z.string().min(50, "Resume text is too short to analyse"),
+      text: z.string().min(50, "JD text is too short to analyse"),
       fileName: z.string(),
     }),
   )
@@ -97,7 +116,7 @@ export const extractResumeSkills = createServerFn({ method: "POST" })
       model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.1,
+        temperature: 0.1, // low temp for structured extraction
         maxOutputTokens: 2048,
       },
     });
@@ -108,8 +127,8 @@ export const extractResumeSkills = createServerFn({ method: "POST" })
 
 FILE: ${fileName}
 
-RESUME TEXT:
-${text.slice(0, 12000)}`;
+JD TEXT:
+${text.slice(0, 12000)}`; // cap at ~12 k chars to stay within free-tier limits
 
     let raw: string;
     try {
@@ -120,6 +139,7 @@ ${text.slice(0, 12000)}`;
       throw new Error(`Gemini API error: ${msg}`);
     }
 
+    // Parse and validate the JSON response
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -127,9 +147,9 @@ ${text.slice(0, 12000)}`;
       throw new Error(`Gemini returned invalid JSON: ${raw.slice(0, 200)}`);
     }
 
-    const validated = ParsedResumeSchema.safeParse(parsed);
+    const validated = ParsedSourceSchema.safeParse(parsed);
     if (!validated.success) {
-      // Best-effort repair
+      // Attempt a best-effort repair — return what we have with the fileName injected
       const partial = parsed as Record<string, unknown>;
       const skills = Array.isArray(partial.skills)
         ? (partial.skills as unknown[])
@@ -152,16 +172,14 @@ ${text.slice(0, 12000)}`;
         : [];
 
       return {
-        source_type: "resume",
+        source_type: "jd",
         source_file: fileName,
-        company: "",
+        company: typeof partial.company === "string" ? partial.company : "Unknown",
         role: typeof partial.role === "string" ? partial.role : "Unknown",
-        education: typeof partial.education === "string" ? partial.education : undefined,
-        projects: Array.isArray(partial.projects) ? (partial.projects as string[]) : [],
-        experience: Array.isArray(partial.experience) ? (partial.experience as string[]) : [],
         skills,
       };
     }
 
+    // Inject the real fileName (Gemini might hallucinate it)
     return { ...validated.data, source_file: fileName };
   });

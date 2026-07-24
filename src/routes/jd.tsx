@@ -5,15 +5,21 @@ import { PaperCard, PaperSkillRow } from "@/components/rehox/SkillRow";
 import { SAMPLE_JDS } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import { fileToText } from "@/lib/rehox/file-to-text";
-import { extractJdSkills } from "@/lib/rehox/jd-extract.server";
+import { extractJdSkills } from "@/lib/rehox/jd-extract";
 
 export const Route = createFileRoute("/jd")({
   head: () => ({
     meta: [
       { title: "JD Analytics · RehoX" },
-      { name: "description", content: "Upload a job description to see the skills it actually requires." },
+      {
+        name: "description",
+        content: "Upload a job description to see the skills it actually requires.",
+      },
       { property: "og:title", content: "JD Analytics · RehoX" },
-      { property: "og:description", content: "Extract the skills, evidence, and confidence behind any job description." },
+      {
+        property: "og:description",
+        content: "Extract the skills, evidence, and confidence behind any job description.",
+      },
     ],
   }),
   component: JDPage,
@@ -31,7 +37,10 @@ function JDPage() {
     setError(null);
     setLoading(true);
     // Sample JDs are pre-parsed — no LLM call needed
-    setTimeout(() => { rehoxStore.set({ jd: found }); setLoading(false); }, 400);
+    setTimeout(() => {
+      rehoxStore.set({ jd: found });
+      setLoading(false);
+    }, 400);
   }
 
   async function handleFile(f: File) {
@@ -53,11 +62,13 @@ function JDPage() {
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4">
         <header>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Step 01 · JD Analytics</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass">
+            Step 01 · JD Analytics
+          </div>
           <h1 className="mt-2 font-display text-3xl font-bold">Upload a job description.</h1>
           <p className="mt-2 text-sm text-muted-text">
-            RehoX reads the JD with Gemini AI and returns the skills it's really asking for — each with a
-            category code and a confidence tag.
+            RehoX reads the JD with Gemini AI and returns the skills it's really asking for — each
+            with a category code and a confidence tag.
           </p>
         </header>
 
@@ -65,7 +76,8 @@ function JDPage() {
 
         {error && (
           <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <span className="mono font-semibold">Error · </span>{error}
+            <span className="mono font-semibold">Error · </span>
+            {error}
           </div>
         )}
 
@@ -78,9 +90,13 @@ function JDPage() {
             defaultValue=""
             onChange={(e) => e.target.value && pickSample(e.target.value)}
           >
-            <option value="" disabled>Select a company · role</option>
+            <option value="" disabled>
+              Select a company · role
+            </option>
             {SAMPLE_JDS.map((j) => (
-              <option key={j.source_file} value={j.source_file}>{j.company} — {j.role}</option>
+              <option key={j.source_file} value={j.source_file}>
+                {j.company} — {j.role}
+              </option>
             ))}
           </select>
         </div>
@@ -127,10 +143,12 @@ export function EmptyDial({ caption }: { caption: string }) {
       <svg width="220" height="220" viewBox="0 0 220 220" className="opacity-50">
         <circle cx="110" cy="110" r="92" fill="none" stroke="var(--line)" />
         <circle cx="110" cy="110" r="22" fill="none" stroke="var(--line)" />
-        {Array.from({length:12}).map((_,i)=>{
-          const a = -Math.PI/2 + i * (Math.PI*2/12);
-          const x1 = 110 + Math.cos(a)*22, y1 = 110 + Math.sin(a)*22;
-          const x2 = 110 + Math.cos(a)*92, y2 = 110 + Math.sin(a)*92;
+        {Array.from({ length: 12 }).map((_, i) => {
+          const a = -Math.PI / 2 + i * ((Math.PI * 2) / 12);
+          const x1 = 110 + Math.cos(a) * 22,
+            y1 = 110 + Math.sin(a) * 22;
+          const x2 = 110 + Math.cos(a) * 92,
+            y2 = 110 + Math.sin(a) * 92;
           return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--line)" />;
         })}
       </svg>

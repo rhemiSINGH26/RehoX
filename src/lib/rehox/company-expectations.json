@@ -1,0 +1,95 @@
+{
+  "Google": {
+    "required_levels": {
+      "COD": 9,
+      "DSA": 10,
+      "OOD": 8,
+      "APTI": 8,
+      "COMM": 7,
+      "AI": 7,
+      "CLOUD": 7,
+      "SQL": 6,
+      "SWE": 8,
+      "SYSD": 9,
+      "NETW": 6,
+      "OS": 8
+    },
+    "weights": {
+      "COD": 1.4,
+      "DSA": 1.4,
+      "OOD": 1.1,
+      "APTI": 1.0,
+      "COMM": 1.0,
+      "AI": 1.1,
+      "CLOUD": 1.1,
+      "SQL": 1.0,
+      "SWE": 1.1,
+      "SYSD": 1.2,
+      "NETW": 0.9,
+      "OS": 1.0
+    },
+    "mandatory_competencies": ["COD", "DSA"]
+  },
+  "Microsoft": {
+    "required_levels": {
+      "COD": 8,
+      "DSA": 8,
+      "OOD": 8,
+      "APTI": 7,
+      "COMM": 8,
+      "AI": 6,
+      "CLOUD": 9,
+      "SQL": 7,
+      "SWE": 8,
+      "SYSD": 8,
+      "NETW": 6,
+      "OS": 7
+    },
+    "weights": {
+      "COD": 1.3,
+      "DSA": 1.2,
+      "OOD": 1.0,
+      "APTI": 0.9,
+      "COMM": 1.0,
+      "AI": 1.1,
+      "CLOUD": 1.4,
+      "SQL": 1.0,
+      "SWE": 1.1,
+      "SYSD": 1.2,
+      "NETW": 0.9,
+      "OS": 1.0
+    },
+    "mandatory_competencies": ["COD", "DSA"]
+  },
+  "Oracle Financial Services Software": {
+    "required_levels": {
+      "COD": 7,
+      "DSA": 6,
+      "OOD": 7,
+      "APTI": 7,
+      "COMM": 8,
+      "AI": 4,
+      "CLOUD": 6,
+      "SQL": 9,
+      "SWE": 7,
+      "SYSD": 6,
+      "NETW": 6,
+      "OS": 6
+    },
+    "weights": {
+      "COD": 1.2,
+      "DSA": 1.1,
+      "OOD": 1.0,
+      "APTI": 0.9,
+      "COMM": 1.0,
+      "AI": 0.9,
+      "CLOUD": 1.0,
+      "SQL": 1.3,
+      "SWE": 1.0,
+      "SYSD": 1.0,
+      "NETW": 0.9,
+      "OS": 1.0
+    },
+    "mandatory_competencies": ["COD", "DSA"]
+  }
+}
