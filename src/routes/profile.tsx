@@ -144,21 +144,13 @@ export function ProfilePage() {
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Step 03 · Candidate Profile Builder</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass">Candidate Profile Builder</div>
           <h1 className="mt-1 font-display text-3xl font-bold">Candidate Profile</h1>
           <p className="mt-1 text-sm text-muted-text">
             Generated directly from Resume Parsing output. Fill or edit remaining entries manually.
           </p>
         </div>
 
-<<<<<<< HEAD
-      <div className="space-y-10">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <div className="mono text-xs uppercase tracking-widest text-brass">Profile Builder</div>
-            <h1 className="mt-2 font-display text-3xl font-bold">Your profile.</h1>
-          </div>
-=======
         <div className="flex items-center gap-3">
           <span className="mono text-[10px] uppercase tracking-widest text-signal-teal bg-signal-teal/10 px-2.5 py-1 rounded border border-signal-teal/20">
             {savedLabel}
@@ -168,7 +160,6 @@ export function ProfilePage() {
               ⚡ {supabaseStatus}
             </span>
           )}
->>>>>>> origin/feature/profile_builder
           <button
             onClick={() => handleSaveAndNext("/talent-check")}
             className="rounded-md bg-brass px-4 py-2 text-xs font-medium text-primary-foreground hover:brightness-110 transition-colors shadow-sm"
