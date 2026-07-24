@@ -136,7 +136,15 @@ export function ProfilePage() {
   async function handleSaveAndNext(destination: "/talent-check" | "/skill-match") {
     const normalized = buildCandidateProfile(profile);
     rehoxStore.set({ profile: normalized, profileSavedAt: Date.now() });
-    await saveProfileToSupabase(normalized);
+    try {
+      saveProfileToSupabase(normalized).then((res) => {
+        if (res.success) setSupabaseStatus("Supabase Synced");
+      }).catch((err) => {
+        console.warn("Supabase sync warning:", err);
+      });
+    } catch {
+      // Ignore background sync errors to guarantee smooth UI navigation
+    }
     nav({ to: destination });
   }
 

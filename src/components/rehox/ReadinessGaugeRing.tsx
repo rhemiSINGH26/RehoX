@@ -42,25 +42,16 @@ export function ReadinessGaugeRing({
       };
     }
     return {
-      return: {
-        gradient: ["#f43f5e", "#e11d48"],
-        text: "text-rose-400",
-        glow: "shadow-rose-500/20",
-        bg: "bg-rose-500/10",
-        border: "border-rose-500/30",
-        status: "Significant Skill Gaps",
-      },
+      gradient: ["#f43f5e", "#e11d48"],
+      text: "text-rose-400",
+      glow: "shadow-rose-500/20",
+      bg: "bg-rose-500/10",
+      border: "border-rose-500/30",
+      status: "Significant Skill Gaps",
     };
   };
 
-  const theme = getTheme() || {
-    gradient: ["#c98a3e", "#f59e0b"],
-    text: "text-brass",
-    glow: "shadow-amber-500/20",
-    bg: "bg-brass/10",
-    border: "border-brass/30",
-    status: "Developing",
-  };
+  const theme = getTheme();
 
   return (
     <div className="relative flex flex-col items-center justify-center">
