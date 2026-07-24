@@ -4,8 +4,6 @@ import { DropZone } from "@/components/rehox/DropZone";
 import { PaperCard, PaperSkillRow } from "@/components/rehox/SkillRow";
 import { SAMPLE_JDS } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
-import { fileToText } from "@/lib/rehox/file-to-text";
-import { extractJdSkills } from "@/lib/rehox/jd-extract.server";
 
 export const Route = createFileRoute("/jd")({
   head: () => ({
@@ -22,31 +20,22 @@ export const Route = createFileRoute("/jd")({
 function JDPage() {
   const jd = useRehox((s) => s.jd);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const nav = useNavigate();
 
   function pickSample(fileName: string) {
     const found = SAMPLE_JDS.find((j) => j.source_file === fileName);
     if (!found) return;
-    setError(null);
     setLoading(true);
-    // Sample JDs are pre-parsed — no LLM call needed
-    setTimeout(() => { rehoxStore.set({ jd: found }); setLoading(false); }, 400);
+    setTimeout(() => { rehoxStore.set({ jd: found }); setLoading(false); }, 500);
   }
 
-  async function handleFile(f: File) {
-    setError(null);
+  function handleFile(f: File) {
     setLoading(true);
-    try {
-      const text = await fileToText(f);
-      const result = await extractJdSkills({ data: { text, fileName: f.name } });
-      rehoxStore.set({ jd: result });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
-    } finally {
+    setTimeout(() => {
+      const sample = SAMPLE_JDS[0];
+      rehoxStore.set({ jd: { ...sample, source_file: f.name } });
       setLoading(false);
-    }
+    }, 700);
   }
 
   return (
@@ -56,23 +45,12 @@ function JDPage() {
           <div className="mono text-xs uppercase tracking-widest text-brass">Step 01 · JD Analytics</div>
           <h1 className="mt-2 font-display text-3xl font-bold">Upload a job description.</h1>
           <p className="mt-2 text-sm text-muted-text">
-            RehoX reads the JD with Gemini AI and returns the skills it's really asking for — each with a
-            category code and a confidence tag.
+            RehoX reads the JD and returns the skills it's really asking for — each with a category code and a confidence tag.
           </p>
         </header>
-
         <DropZone label="Upload a JD" onFile={handleFile} loading={loading} />
-
-        {error && (
-          <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <span className="mono font-semibold">Error · </span>{error}
-          </div>
-        )}
-
         <div className="rounded-xl border border-line bg-panel/40 p-4">
-          <label className="mono text-[10px] uppercase tracking-widest text-muted-text">
-            Or try a sample JD (no API call)
-          </label>
+          <label className="mono text-[10px] uppercase tracking-widest text-muted-text">Try a sample JD</label>
           <select
             className="mt-2 w-full rounded-md border border-line bg-ink px-3 py-2 text-sm text-ink-text focus:border-brass focus:outline-none"
             defaultValue=""
@@ -88,9 +66,9 @@ function JDPage() {
 
       <div>
         {loading ? (
-          <PaperCard title="Reading JD" subtitle="Gemini is extracting required skills…">
+          <PaperCard title="Reading JD" subtitle="Extracting required skills…">
             <div className="space-y-2">
-              {[...Array(6)].map((_, i) => (
+              {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-10 animate-pulse rounded bg-black/5" />
               ))}
             </div>
@@ -98,11 +76,7 @@ function JDPage() {
         ) : jd ? (
           <div className="space-y-4">
             <PaperCard title={`JD · ${jd.source_file}`} subtitle={`${jd.company} — ${jd.role}`}>
-              {jd.skills.length === 0 ? (
-                <p className="text-sm text-muted-text">No skills extracted. Try a longer JD.</p>
-              ) : (
-                jd.skills.map((s, i) => <PaperSkillRow key={i} skill={s} />)
-              )}
+              {jd.skills.map((s, i) => <PaperSkillRow key={i} skill={s} />)}
             </PaperCard>
             <div className="flex justify-end">
               <button
@@ -114,7 +88,7 @@ function JDPage() {
             </div>
           </div>
         ) : (
-          <EmptyDial caption="Upload a JD or pick a sample to see what it's really asking for." />
+          <EmptyDial caption="Upload a JD to see what it's really asking for." />
         )}
       </div>
     </div>

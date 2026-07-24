@@ -4,8 +4,40 @@ import { SkillDial } from "@/components/rehox/SkillDial";
 import { SAMPLE_JDS } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import { runSkillMatch } from "@/lib/rehox/compute";
-import { CATEGORY_LABEL } from "@/lib/rehox/types";
+import { CATEGORY_LABEL, type Skill, type SkillMatchResult, type CategoryCode } from "@/lib/rehox/types";
 import { EmptyState } from "./talent-check";
+
+function normalizeApiResponse(payload: Record<string, unknown>, jd: { skills: Skill[] }): SkillMatchResult {
+  const matched = Array.isArray(payload.matched_skills) ? payload.matched_skills : [];
+  const missing = Array.isArray(payload.missing_skills) ? payload.missing_skills : [];
+  const skillsByName = new Map(jd.skills.map((skill) => [skill.skill_name.toLowerCase(), skill]));
+
+  const toSkill = (value: unknown): Skill | null => {
+    if (typeof value !== "string") return null;
+    const source = skillsByName.get(value.toLowerCase());
+    if (source) {
+      return source;
+    }
+
+    return {
+      skill_name: value,
+      category_code: "OTHER" as CategoryCode,
+      evidence: "Matched via backend response",
+      confidence: "medium",
+    };
+  };
+
+  return {
+    jd_source_file: jd.skills.length > 0 ? "backend-match" : "backend-match",
+    match_score: typeof payload.match_score === "number" ? payload.match_score : 0,
+    matched_skills: matched.map((value) => toSkill(value)).filter((skill): skill is Skill => Boolean(skill)),
+    missing_skills: missing.map((value) => toSkill(value)).filter((skill): skill is Skill => Boolean(skill)),
+    summary: typeof payload.summary === "string" ? payload.summary : undefined,
+    category_scores: Array.isArray(payload.category_scores)
+      ? payload.category_scores.filter((entry): entry is { category: string; score: number } => Boolean(entry && typeof entry === "object" && "category" in entry && "score" in entry && typeof entry.score === "number"))
+      : [],
+  };
+}
 
 export const Route = createFileRoute("/skill-match")({
   head: () => ({
@@ -30,10 +62,90 @@ function SkillMatchPage() {
   }, [currentJd]);
 
   const [jdFile, setJdFile] = useState(currentJd?.source_file ?? SAMPLE_JDS[0].source_file);
+  const [apiResult, setApiResult] = useState<SkillMatchResult | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const jd = allJds.find((j) => j.source_file === jdFile) ?? allJds[0];
 
-  const result = useMemo(() => profile ? runSkillMatch(profile, jd) : null, [profile, jd]);
-  useEffect(() => { if (result) rehoxStore.set({ skillMatch: result }); }, [result]);
+  const fallbackResult = useMemo(() => (profile ? runSkillMatch(profile, jd) : null), [profile, jd]);
+  const result = apiResult ?? fallbackResult;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMatch() {
+      if (!profile || !jd) {
+        setApiResult(null);
+        setApiError(null);
+        return;
+      }
+
+      setIsLoading(true);
+      setApiError(null);
+
+      try {
+        const payload = {
+          candidate_profile: {
+            name: profile.name,
+            skills: profile.skills.map((skill) => ({
+              skill_name: skill.skill_name,
+              category_code: skill.category_code,
+              evidence: skill.evidence,
+              confidence: skill.confidence,
+            })),
+          },
+          jd: {
+            company: jd.company,
+            role: jd.role,
+            skills: jd.skills.map((skill) => ({
+              skill_name: skill.skill_name,
+              category_code: skill.category_code,
+              evidence: skill.evidence,
+              confidence: skill.confidence,
+            })),
+          },
+        };
+
+        const response = await fetch("http://localhost:8000/api/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Backend returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        const normalized = normalizeApiResponse(data, jd);
+
+        if (!cancelled) {
+          setApiResult(normalized);
+          rehoxStore.set({ skillMatch: normalized });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setApiError(error instanceof Error ? error.message : "Unable to reach the skill-match backend.");
+          setApiResult(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadMatch();
+    return () => {
+      cancelled = true;
+    };
+  }, [jd, profile]);
+
+  useEffect(() => {
+    if (result) {
+      rehoxStore.set({ skillMatch: result });
+    }
+  }, [result]);
 
   if (!profile) {
     return <EmptyState title="No profile yet." body="Skill Match compares your profile against one specific JD."
@@ -74,6 +186,9 @@ function SkillMatchPage() {
           <div className="mono text-[10px] uppercase tracking-widest text-muted-text">Match</div>
           <div className="mt-1 mono text-6xl font-bold text-brass">{r.match_score}</div>
           <div className="mt-1 text-sm text-muted-text">out of 100 against {jd.role}</div>
+          {r.summary ? <div className="mt-3 rounded-md border border-line bg-ink/60 px-3 py-2 text-sm text-muted-text">{r.summary}</div> : null}
+          {isLoading ? <div className="mt-4 text-sm text-muted-text">Loading live result from the backend…</div> : null}
+          {apiError ? <div className="mt-4 rounded-md border border-alert-coral/40 bg-alert-coral/10 px-3 py-2 text-sm text-alert-coral">Backend unavailable: {apiError}</div> : null}
           <div className="mt-6 border-t border-line pt-4 grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="mono text-[10px] uppercase tracking-widest text-alert-coral">Missing</div>
@@ -86,6 +201,25 @@ function SkillMatchPage() {
           </div>
         </div>
       </div>
+
+      {r.category_scores && r.category_scores.length > 0 ? (
+        <section className="rounded-xl border border-line bg-panel/20 p-6">
+          <h2 className="font-display text-lg font-semibold">Category scores</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {r.category_scores.map((entry) => (
+              <div key={entry.category} className="rounded-md border border-line bg-ink/60 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{entry.category}</span>
+                  <span className="mono text-sm text-brass">{entry.score}%</span>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-panel">
+                  <div className="h-2 rounded-full bg-brass" style={{ width: `${Math.min(100, entry.score)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-xl border border-alert-coral/40 bg-alert-coral/5 p-6">
         <div className="flex items-center gap-2">
