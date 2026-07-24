@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { SkillDial } from "@/components/rehox/SkillDial";
+import { RADIXRadarChart } from "@/components/rehox/RADIXRadarChart";
+import { ReadinessGaugeRing } from "@/components/rehox/ReadinessGaugeRing";
 import { readinessLabel, runTalentCheck } from "@/lib/rehox/compute";
 import { useRehox } from "@/lib/rehox/store";
 import { CATEGORY_LABEL } from "@/lib/rehox/types";
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/talent-check")({
   component: TalentCheckPage,
 });
 
-function TalentCheckPage() {
+export function TalentCheckPage() {
   const profile = useRehox((s) => s.profile);
   const jd = useRehox((s) => s.jd);
 
@@ -36,14 +37,14 @@ function TalentCheckPage() {
         title="No candidate profile built yet."
         body="Talent Check compares candidate competencies against the full 12-skillset RADIX framework."
         ctaTo="/profile"
-        ctaLabel="Build your profile →"
+        ctaLabel="Build candidate profile →"
       />
     );
   }
 
-  const targetTitle = jd ? `${jd.company} — ${jd.role}` : profile.preferred_roles[0] || "Target Software Engineer Role";
+  const targetTitle = jd ? `${jd.company !== "Unknown" ? jd.company + " — " : ""}${jd.role}` : profile.preferred_roles[0] || "Target Software Engineer Role";
 
-  const dialData =
+  const radarData =
     result?.skillset_gap.map((row) => ({
       code: row.category_code,
       required: row.required_level,
@@ -59,16 +60,17 @@ function TalentCheckPage() {
     : [];
 
   const gapCount = result?.skillset_gap.filter((row) => row.gap).length ?? 0;
+  const metCount = (result?.skillset_gap.length ?? 12) - gapCount;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
-      {/* Page Header */}
+      {/* Top Navigation Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Talent Readiness Check</div>
-          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Competency Radar</h1>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Talent Readiness Visualization</div>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Competency Radar Check</h1>
           <p className="mt-1 text-xs text-muted-text">
-            Evaluation for <strong className="text-ink-text font-medium">{targetTitle}</strong>
+            Evaluation target: <strong className="text-ink-text font-medium">{targetTitle}</strong>
           </p>
         </div>
 
@@ -84,70 +86,84 @@ function TalentCheckPage() {
 
       {result && (
         <>
-          {/* Main Dial & Score Layout */}
-          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr),340px]">
-            {/* Radar Dial View */}
-            <div className="rounded-3xl border border-line/60 bg-panel/50 p-6 flex items-center justify-center shadow-sm">
-              <SkillDial data={dialData} size={440} />
+          {/* Executive Radar & Gauge Hero Card */}
+          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr),320px] items-stretch">
+            {/* Left: 12-Axis Radar Chart */}
+            <div className="rounded-3xl border border-line/60 bg-panel/60 p-6 flex flex-col items-center justify-center shadow-xl backdrop-blur-md">
+              <div className="w-full flex items-center justify-between border-b border-line/40 pb-3 mb-4">
+                <div className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
+                  RADIX 12-Skillset Spider Radar
+                </div>
+                <span className="mono text-[11px] text-muted-text">{metCount}/12 Requirements Met</span>
+              </div>
+              <RADIXRadarChart data={radarData} size={420} showLegend={true} />
             </div>
 
-            {/* Score & Readiness Card */}
-            <div className="rounded-3xl border border-brass/40 bg-gradient-to-br from-panel/90 via-panel/60 to-brass/10 p-6 space-y-6 shadow-xl backdrop-blur-md flex flex-col justify-between">
-              <div>
-                <div className="mono text-[11px] uppercase tracking-widest text-brass font-semibold">
+            {/* Right: Readiness Score Gauge Ring */}
+            <div className="rounded-3xl border border-brass/40 bg-gradient-to-br from-panel/90 via-panel/60 to-brass/10 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between items-center text-center space-y-6">
+              <div className="w-full border-b border-line/40 pb-3 text-left">
+                <div className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
                   Readiness Score
-                </div>
-                <div className="mt-2 font-display text-6xl font-extrabold text-ink-text">
-                  {result.readiness_score}
-                  <span className="text-2xl font-normal text-muted-text">/100</span>
-                </div>
-                <div className="mt-2 inline-flex items-center rounded-lg bg-brass/20 px-3 py-1 text-xs font-bold text-brass border border-brass/30">
-                  ⚡ {result.readiness_band ?? readinessLabel(result.readiness_score)}
                 </div>
               </div>
 
-              <div className="border-t border-line/40 pt-4 space-y-2 text-xs">
-                <div className="flex justify-between text-muted-text">
-                  <span>Target Role:</span>
-                  <span className="text-ink-text font-medium truncate max-w-[160px]">{jd?.role || "Software Engineer"}</span>
+              <ReadinessGaugeRing
+                score={result.readiness_score}
+                size={210}
+                label="Readiness Index"
+                sublabel="RADIX Benchmark Score"
+              />
+
+              <div className="w-full space-y-3 pt-2">
+                <div className="inline-flex items-center gap-2 rounded-xl bg-brass/20 px-4 py-2 text-xs font-bold text-brass border border-brass/40 shadow-sm w-full justify-center">
+                  ⚡ {result.readiness_band ?? readinessLabel(result.readiness_score)}
                 </div>
-                <div className="flex justify-between text-muted-text">
-                  <span>Skill Gaps:</span>
-                  <span className={gapCount > 0 ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>
-                    {gapCount === 0 ? "All requirements met! 🎉" : `${gapCount} gap${gapCount === 1 ? "" : "s"} identified`}
-                  </span>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5">
+                    <div className="mono text-[10px] uppercase font-bold text-emerald-400">Met Skills</div>
+                    <div className="font-display text-lg font-bold text-emerald-400">{metCount}</div>
+                  </div>
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5">
+                    <div className="mono text-[10px] uppercase font-bold text-amber-400">Gaps</div>
+                    <div className="font-display text-lg font-bold text-amber-400">{gapCount}</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Explanation Banner */}
+          {/* AI Explanation Banner */}
           {result.explanation && (
-            <div className="rounded-2xl border border-line/60 bg-panel/50 p-5 space-y-1.5 shadow-sm">
-              <div className="mono text-[10px] uppercase tracking-widest text-brass font-semibold">
+            <div className="rounded-2xl border border-line/60 bg-panel/60 p-5 space-y-1.5 shadow-sm">
+              <div className="mono text-[10px] uppercase tracking-widest text-brass font-bold flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-brass animate-pulse" />
                 RADIX Evaluation Summary
               </div>
-              <p className="text-xs text-muted-text leading-relaxed">{result.explanation}</p>
+              <p className="text-xs text-muted-text leading-relaxed font-medium">{result.explanation}</p>
             </div>
           )}
 
-          {/* Top Priorities Card */}
+          {/* Top Priorities Focus Card */}
           {result.top_priorities && result.top_priorities.length > 0 && (
-            <div className="rounded-2xl border border-line/60 bg-panel/50 p-5 space-y-3 shadow-sm">
-              <div className="mono text-[10px] uppercase tracking-widest text-brass font-semibold">
-                Priority Skill Target Areas
+            <div className="rounded-2xl border border-line/60 bg-panel/60 p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-line/40 pb-3">
+                <div className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
+                  Top Priority Skill Focus Areas
+                </div>
+                <span className="mono text-[10px] text-amber-400 font-semibold uppercase">High Leverage Gaps</span>
               </div>
-              <div className="grid gap-2.5 md:grid-cols-3">
+              <div className="grid gap-3.5 md:grid-cols-3">
                 {result.top_priorities.map((priority) => (
                   <div
                     key={priority.category_code}
-                    className="flex items-center justify-between rounded-xl border border-line/60 bg-ink/50 p-3.5"
+                    className="flex items-center justify-between rounded-xl border border-line/60 bg-ink/60 p-4 shadow-sm"
                   >
-                    <div className="space-y-0.5">
-                      <div className="mono text-[10px] font-bold text-brass">{priority.category_code}</div>
-                      <div className="text-xs font-semibold text-ink-text">{CATEGORY_LABEL[priority.category_code]}</div>
+                    <div className="space-y-1">
+                      <span className="mono text-[11px] font-bold text-brass">{priority.category_code}</span>
+                      <div className="text-xs font-bold text-ink-text">{CATEGORY_LABEL[priority.category_code]}</div>
                     </div>
-                    <span className="mono text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    <span className="mono text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30">
                       {priority.severity}
                     </span>
                   </div>
@@ -156,45 +172,70 @@ function TalentCheckPage() {
             </div>
           )}
 
-          {/* 12-Skillset Breakdown Table */}
-          <div className="rounded-2xl border border-line/60 bg-panel/50 overflow-hidden shadow-sm">
-            <div className="grid grid-cols-[90px,1fr,80px,80px,90px] gap-3 border-b border-line/60 px-5 py-3 mono text-[10px] uppercase tracking-widest text-muted-text font-bold">
-              <div>Category</div>
-              <div>Skill Domain</div>
-              <div>Required</div>
-              <div>Candidate</div>
-              <div>Status</div>
+          {/* 12-Skillset Grid Cards Visualization */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="font-display text-xl font-bold text-ink-text">12-Category Skillset Competency Matrix</h2>
+              <span className="mono text-xs text-muted-text font-medium">RADIX Competency Levels (1-10)</span>
             </div>
-            {sortedGap.map((row) => (
-              <div
-                key={row.category_code}
-                className="grid grid-cols-[90px,1fr,80px,80px,90px] items-center gap-3 border-t border-line/40 px-5 py-3 text-xs hover:bg-ink/30 transition-colors"
-              >
-                <span className="mono font-bold text-brass">{row.category_code}</span>
-                <span className="font-semibold text-ink-text">{CATEGORY_LABEL[row.category_code]}</span>
-                <span className="mono text-muted-text font-medium">{row.required_level}/10</span>
-                <span className="mono font-bold text-ink-text">{row.candidate_level}/10</span>
-                {row.gap ? (
-                  <span className="inline-flex items-center gap-1.5 text-amber-400 font-semibold mono text-[11px]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    Gap
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold mono text-[11px]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    Met
-                  </span>
-                )}
-              </div>
-            ))}
+
+            <div className="grid gap-3.5 md:grid-cols-3">
+              {result.skillset_gap.map((row) => {
+                const isMet = !row.gap;
+                const percent = Math.min(100, Math.round((row.candidate_level / Math.max(1, row.required_level)) * 100));
+
+                return (
+                  <div
+                    key={row.category_code}
+                    className="rounded-2xl border border-line/60 bg-panel/50 p-4 space-y-3 shadow-sm hover:border-brass/40 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="mono text-[11px] font-bold text-brass rounded bg-ink px-2 py-0.5 border border-line">
+                          {row.category_code}
+                        </span>
+                        <span className="text-xs font-bold text-ink-text">{CATEGORY_LABEL[row.category_code]}</span>
+                      </div>
+                      <span
+                        className={[
+                          "mono text-[10px] px-2 py-0.5 rounded-md font-bold uppercase",
+                          isMet
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/10 text-amber-400 border border-amber-500/30",
+                        ].join(" ")}
+                      >
+                        {isMet ? "Met" : "Gap"}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] mono">
+                        <span className="text-muted-text">Cand: <strong className="text-ink-text">{row.candidate_level}</strong></span>
+                        <span className="text-muted-text">Req: <strong className="text-brass">{row.required_level}</strong></span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-ink overflow-hidden border border-line/40">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-500 ${isMet ? "bg-emerald-500" : "bg-amber-500"}`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-4">
             <Link
               to="/skill-match"
-              className="flex items-center gap-2 rounded-xl bg-brass px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:brightness-110 active:scale-95"
+              className="flex items-center gap-2.5 rounded-xl bg-brass px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:brightness-110 active:scale-95"
             >
-              <span>Continue to Skill Match →</span>
+              <span>Continue to Skill Match</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
             </Link>
           </div>
         </>

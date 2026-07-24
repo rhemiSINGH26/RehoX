@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { SkillDial } from "@/components/rehox/SkillDial";
+import { ReadinessGaugeRing } from "@/components/rehox/ReadinessGaugeRing";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import { runSkillMatch } from "@/lib/rehox/compute";
 import { CATEGORY_LABEL, type Skill, type SkillMatchResult, type CategoryCode } from "@/lib/rehox/types";
@@ -153,19 +153,6 @@ function SkillMatchPage() {
     );
   }
 
-  const jdCats = new Set(jd.skills.map((s) => s.category_code));
-  const profileCatLevel = new Map<string, number>();
-  for (const s of profile.skills) {
-    profileCatLevel.set(
-      s.category_code,
-      Math.max(profileCatLevel.get(s.category_code) ?? 0, s.confidence === "high" ? 8 : s.confidence === "medium" ? 6 : 4)
-    );
-  }
-  const dialData = Array.from(jdCats).map((c) => ({
-    code: c,
-    required: 8,
-    candidate: profileCatLevel.get(c) ?? 0,
-  }));
   const r = result!;
 
   return (
@@ -173,14 +160,14 @@ function SkillMatchPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Skill Match Analysis</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Skill Alignment Visualization</div>
           <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Job Match Assessment</h1>
           <p className="mt-1 text-xs text-muted-text">
             Target Job: <strong className="text-ink-text font-medium">{jd.company !== "Unknown" ? `${jd.company} — ` : ""}{jd.role}</strong>
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <span className="mono text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
             ⚡ AI Engine Active
           </span>
@@ -193,45 +180,58 @@ function SkillMatchPage() {
         </div>
       </div>
 
-      {/* Hero Metrics & Dial */}
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr),340px]">
-        <div className="rounded-3xl border border-line/60 bg-panel/50 p-6 flex justify-center items-center shadow-sm">
-          <SkillDial data={dialData} size={380} compact />
+      {/* Hero Metrics & Gauge Layout */}
+      <div className="grid gap-6 md:grid-cols-[280px,minmax(0,1fr)] items-stretch">
+        {/* Match Index Gauge Ring */}
+        <div className="rounded-3xl border border-brass/40 bg-gradient-to-br from-panel/90 via-panel/60 to-brass/10 p-6 flex flex-col items-center justify-center text-center shadow-xl backdrop-blur-md">
+          <ReadinessGaugeRing
+            score={r.match_score}
+            size={190}
+            label="Match Index"
+            sublabel="Skill Compatibility"
+          />
+
+          <div className="mt-4 grid grid-cols-2 gap-2 w-full text-center text-xs">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5">
+              <div className="mono text-[10px] uppercase font-bold text-emerald-400">Matched</div>
+              <div className="font-display text-xl font-bold text-emerald-400">{r.matched_skills.length}</div>
+            </div>
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5">
+              <div className="mono text-[10px] uppercase font-bold text-amber-400">Missing</div>
+              <div className="font-display text-xl font-bold text-amber-400">{r.missing_skills.length}</div>
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-3xl border border-brass/40 bg-gradient-to-br from-panel/90 via-panel/60 to-brass/10 p-6 space-y-6 shadow-xl backdrop-blur-md flex flex-col justify-between">
-          <div>
-            <div className="mono text-[11px] uppercase tracking-widest text-brass font-semibold">
-              Skill Match Index
+        {/* Match Summary & Candidate Overview Card */}
+        <div className="rounded-3xl border border-line/60 bg-panel/50 p-6 flex flex-col justify-between space-y-4 shadow-sm">
+          <div className="space-y-2">
+            <div className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
+              Match Evaluation Summary
             </div>
-            <div className="mt-2 font-display text-6xl font-extrabold text-brass">
-              {r.match_score}%
-            </div>
-            <div className="mt-1.5 text-xs text-muted-text">
-              Match score against {jd.role}
-            </div>
-
-            {r.summary && (
-              <div className="mt-4 rounded-xl border border-line/60 bg-ink/60 p-3.5 text-xs text-muted-text leading-relaxed">
-                {r.summary}
-              </div>
-            )}
+            <p className="text-xs text-muted-text leading-relaxed font-medium">
+              {r.summary || `Candidate shows a ${r.match_score}% skill alignment against ${jd.role}. Candidate matches ${r.matched_skills.length} out of ${jd.skills.length} required skill signals.`}
+            </p>
           </div>
 
-          <div className="border-t border-line/40 pt-4 grid grid-cols-2 gap-4 text-center">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-              <div className="mono text-[10px] uppercase tracking-widest text-emerald-400 font-bold">Matched</div>
-              <div className="mt-1 font-display text-2xl font-bold text-emerald-400">{r.matched_skills.length}</div>
+          <div className="border-t border-line/40 pt-4 grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-xl border border-line/40 bg-ink/50 p-3">
+              <div className="font-display text-2xl font-bold text-ink-text">{jd.skills.length}</div>
+              <div className="mono text-[10px] uppercase text-muted-text mt-0.5">JD Skills</div>
             </div>
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-              <div className="mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">Missing</div>
-              <div className="mt-1 font-display text-2xl font-bold text-amber-400">{r.missing_skills.length}</div>
+            <div className="rounded-xl border border-line/40 bg-ink/50 p-3">
+              <div className="font-display text-2xl font-bold text-emerald-400">{r.matched_skills.length}</div>
+              <div className="mono text-[10px] uppercase text-muted-text mt-0.5">Matched</div>
+            </div>
+            <div className="rounded-xl border border-line/40 bg-ink/50 p-3">
+              <div className="font-display text-2xl font-bold text-amber-400">{r.missing_skills.length}</div>
+              <div className="mono text-[10px] uppercase text-muted-text mt-0.5">Deficits</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Category Scores Bar Chart */}
+      {/* Category Match Progress Bar Matrix */}
       {r.category_scores && r.category_scores.length > 0 && (
         <section className="rounded-2xl border border-line/60 bg-panel/50 p-6 space-y-4 shadow-sm">
           <h2 className="font-display text-lg font-bold text-ink-text">Category Skill Match Breakdown</h2>
@@ -242,8 +242,8 @@ function SkillMatchPage() {
                   <span className="font-semibold text-ink-text">{entry.category}</span>
                   <span className="mono font-bold text-brass">{entry.score}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-panel/80 overflow-hidden">
-                  <div className="h-2 rounded-full bg-brass transition-all duration-500" style={{ width: `${Math.min(100, entry.score)}%` }} />
+                <div className="h-2.5 w-full rounded-full bg-panel overflow-hidden border border-line/40">
+                  <div className="h-2.5 rounded-full bg-brass transition-all duration-500" style={{ width: `${Math.min(100, entry.score)}%` }} />
                 </div>
               </div>
             ))}
@@ -251,8 +251,8 @@ function SkillMatchPage() {
         </section>
       )}
 
-      {/* Missing Skills Cards */}
-      <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 space-y-4">
+      {/* Missing Skills Section */}
+      <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse" />
@@ -261,21 +261,21 @@ function SkillMatchPage() {
         </div>
 
         {r.missing_skills.length === 0 ? (
-          <div className="text-xs text-emerald-400 font-medium">All skill requirements met! Candidate covers all required competencies.</div>
+          <div className="text-xs text-emerald-400 font-semibold">All skill requirements met! Candidate covers all required competencies.</div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {r.missing_skills.map((s, i) => (
-              <div key={i} className="rounded-xl border border-line/60 bg-panel/70 p-4 space-y-1.5 shadow-sm">
+              <div key={i} className="rounded-xl border border-line/60 bg-panel/80 p-4 space-y-2 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="mono rounded-lg bg-ink px-2 py-0.5 text-[10px] font-bold text-brass border border-line">
+                  <span className="mono rounded-lg bg-ink px-2.5 py-1 text-[10px] font-bold text-brass border border-line">
                     {s.category_code}
                   </span>
                   <span className="text-sm font-bold text-ink-text">{s.skill_name}</span>
-                  <span className="mono text-[10px] uppercase text-muted-text/80">{CATEGORY_LABEL[s.category_code]}</span>
+                  <span className="mono text-[10px] uppercase text-muted-text">{CATEGORY_LABEL[s.category_code]}</span>
                 </div>
                 {s.evidence && (
-                  <div className="text-xs italic text-muted-text/90 pt-1 border-t border-line/30">
-                    JD Evidence: "{s.evidence}"
+                  <div className="text-xs italic text-muted-text/90 pt-1.5 border-t border-line/40">
+                    "{s.evidence}"
                   </div>
                 )}
               </div>
@@ -284,8 +284,8 @@ function SkillMatchPage() {
         )}
       </section>
 
-      {/* Matched Skills Cards */}
-      <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 space-y-4">
+      {/* Matched Skills Section */}
+      <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 space-y-4 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
           <h2 className="font-display text-lg font-bold text-ink-text">Matched Skills ({r.matched_skills.length})</h2>
@@ -293,7 +293,7 @@ function SkillMatchPage() {
 
         <div className="grid gap-2.5 md:grid-cols-3">
           {r.matched_skills.map((s, i) => (
-            <div key={i} className="flex items-center gap-2.5 rounded-xl border border-line/60 bg-panel/70 px-3.5 py-2.5 text-xs shadow-sm">
+            <div key={i} className="flex items-center gap-2.5 rounded-xl border border-line/60 bg-panel/80 px-4 py-3 text-xs shadow-sm">
               <span className="mono rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
                 {s.category_code}
               </span>
