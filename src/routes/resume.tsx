@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabase";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { DropZone } from "@/components/rehox/DropZone";
@@ -35,20 +36,51 @@ function ResumePage() {
     setTimeout(() => { rehoxStore.set({ resume: r }); setLoading(false); }, 400);
   }
 
-  async function handleFile(f: File) {
-    setError(null);
-    setLoading(true);
-    try {
-      const text = await fileToText(f);
-      const result = await extractResumeSkills({ data: { text, fileName: f.name } });
-      rehoxStore.set({ resume: result });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
-    } finally {
-      setLoading(false);
+async function handleFile(f: File) {
+  setError(null);
+  setLoading(true);
+
+  try {
+    const safeFileName = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = `${Date.now()}-${safeFileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("resumes")
+      .upload(storagePath, f);
+
+    if (uploadError) {
+      throw new Error(`Resume upload failed: ${uploadError.message}`);
     }
+
+    const text = await fileToText(f);
+
+    const result = await extractResumeSkills({
+      data: {
+        text,
+        fileName: f.name,
+      },
+    });
+
+    const { error: saveError } = await supabase
+      .from("resume_parses")
+      .insert({
+        source_file: f.name,
+        storage_path: storagePath,
+        parsed_data: result,
+      });
+
+    if (saveError) {
+      throw new Error(`Could not save parsed result: ${saveError.message}`);
+    }
+
+    rehoxStore.set({ resume: result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    setError(message);
+  } finally {
+    setLoading(false);
   }
+}
 
   function useForProfile() {
     if (!resume) return;
