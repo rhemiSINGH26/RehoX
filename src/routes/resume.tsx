@@ -5,7 +5,7 @@ import { PaperCard, PaperSkillRow } from "@/components/rehox/SkillRow";
 import { EmptyDial } from "./jd";
 import { SAMPLE_RESUMES } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
-import type { Profile } from "@/lib/rehox/types";
+import { buildCandidateProfile } from "@/lib/rehox/profileBuilder";
 import { fileToText } from "@/lib/rehox/file-to-text";
 import { extractResumeSkills } from "@/lib/rehox/resume-extract";
 
@@ -32,7 +32,12 @@ function ResumePage() {
     if (!r) return;
     setError(null);
     setLoading(true);
-    setTimeout(() => { rehoxStore.set({ resume: r }); setLoading(false); }, 400);
+    setTimeout(() => {
+      rehoxStore.set({ resume: r });
+      const profile = buildCandidateProfile(r);
+      rehoxStore.set({ profile, profileSavedAt: Date.now() });
+      setLoading(false);
+    }, 400);
   }
 
   async function handleFile(f: File) {
@@ -42,6 +47,8 @@ function ResumePage() {
       const text = await fileToText(f);
       const result = await extractResumeSkills({ data: { text, fileName: f.name } });
       rehoxStore.set({ resume: result });
+      const profile = buildCandidateProfile(result);
+      rehoxStore.set({ profile, profileSavedAt: Date.now() });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -52,18 +59,7 @@ function ResumePage() {
 
   function useForProfile() {
     if (!resume) return;
-    const dn = (resume as { displayName?: string }).displayName;
-    const profile: Profile = {
-      name: dn ? dn.split(" — ")[0] : "Candidate",
-      email: "you@example.com",
-      education: resume.education ?? "",
-      skills: resume.skills,
-      hackathons: [],
-      internships: resume.experience ?? [],
-      certifications: [],
-      preferred_roles: resume.role ? [resume.role] : [],
-      cv_file: resume.source_file,
-    };
+    const profile = buildCandidateProfile(resume);
     rehoxStore.set({ profile, profileSavedAt: Date.now() });
     nav({ to: "/profile" });
   }
@@ -75,7 +71,7 @@ function ResumePage() {
           <div className="mono text-xs uppercase tracking-widest text-brass">Resume Parsing</div>
           <h1 className="mt-2 font-display text-3xl font-bold">Upload a resume to see what it shows.</h1>
           <p className="mt-2 text-sm text-muted-text">
-            Skills, projects, education, experience — extracted by Gemini AI as structured data.
+            Skills, projects, education, experience — extracted as structured data.
           </p>
         </header>
 
@@ -89,7 +85,7 @@ function ResumePage() {
 
         <div className="rounded-xl border border-line bg-panel/40 p-4">
           <label className="mono text-[10px] uppercase tracking-widest text-muted-text">
-            Or try a sample resume (no API call)
+            Or try a sample resume
           </label>
           <select
             className="mt-2 w-full rounded-md border border-line bg-ink px-3 py-2 text-sm text-ink-text focus:border-brass focus:outline-none"
@@ -106,7 +102,7 @@ function ResumePage() {
 
       <div>
         {loading ? (
-          <PaperCard title="Reading resume" subtitle="Gemini is extracting skills and structure…">
+          <PaperCard title="Reading resume" subtitle="Extracting skills and structure…">
             <div className="space-y-2">{[...Array(6)].map((_,i)=><div key={i} className="h-10 animate-pulse rounded bg-black/5"/>)}</div>
           </PaperCard>
         ) : resume ? (

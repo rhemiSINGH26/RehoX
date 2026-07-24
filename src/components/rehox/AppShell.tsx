@@ -30,7 +30,7 @@ function Pipeline() {
   const ready = { jd: !!jd, resume: !!resume, profile: !!profile, talent: !!talentCheck, match: !!skillMatch };
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <nav aria-label="RehoX pipeline" className="flex items-center gap-2 md:gap-3 overflow-x-auto">
+    <nav aria-label="RehoX pipeline" className="flex items-center gap-2 md:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {NODES.map((n, i) => {
         const active = ready[n.key as keyof typeof ready];
         const current = pathname === n.to;
