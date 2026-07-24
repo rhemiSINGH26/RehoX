@@ -1,38 +1,50 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { DropZone } from "@/components/rehox/DropZone";
-import { PaperCard, PaperSkillRow } from "@/components/rehox/SkillRow";
-import { SAMPLE_JDS } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import { fileToText } from "@/lib/rehox/file-to-text";
-import { extractJdSkills } from "@/lib/rehox/jd-extract.server";
+import { extractJdSkills } from "@/lib/rehox/jd-extract";
+import { CATEGORY_LABEL, type CategoryCode, type Skill } from "@/lib/rehox/types";
 
 export const Route = createFileRoute("/jd")({
   head: () => ({
     meta: [
       { title: "JD Analytics · RehoX" },
-      { name: "description", content: "Upload a job description to see the skills it actually requires." },
+      { name: "description", content: "Upload a job description document (PDF or DOCX) to extract required skills and competencies." },
       { property: "og:title", content: "JD Analytics · RehoX" },
-      { property: "og:description", content: "Extract the skills, evidence, and confidence behind any job description." },
+      { property: "og:description", content: "Extract structured skill lists, evidence, and confidence ratings from any job description." },
     ],
   }),
   component: JDPage,
 });
 
-function JDPage() {
+const categoryColors: Record<CategoryCode, { bg: string; text: string; border: string }> = {
+  COD: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30" },
+  DSA: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30" },
+  OOD: { bg: "bg-indigo-500/10", text: "text-indigo-400", border: "border-indigo-500/30" },
+  APTI: { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/30" },
+  COMM: { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/30" },
+  AI: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/30" },
+  CLOUD: { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/30" },
+  SQL: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30" },
+  SWE: { bg: "bg-teal-500/10", text: "text-teal-400", border: "border-teal-500/30" },
+  SYSD: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/30" },
+  NETW: { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/30" },
+  OS: { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/30" },
+  OTHER: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/30" },
+};
+
+const confidenceStyles: Record<Skill["confidence"], { bg: string; text: string; dot: string }> = {
+  high: { bg: "bg-emerald-500/10 border border-emerald-500/30", text: "text-emerald-400", dot: "bg-emerald-400" },
+  medium: { bg: "bg-amber-500/10 border border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
+  low: { bg: "bg-slate-500/10 border border-slate-500/30", text: "text-slate-400", dot: "bg-slate-400" },
+};
+
+export function JDPage() {
   const jd = useRehox((s) => s.jd);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const nav = useNavigate();
-
-  function pickSample(fileName: string) {
-    const found = SAMPLE_JDS.find((j) => j.source_file === fileName);
-    if (!found) return;
-    setError(null);
-    setLoading(true);
-    // Sample JDs are pre-parsed — no LLM call needed
-    setTimeout(() => { rehoxStore.set({ jd: found }); setLoading(false); }, 400);
-  }
 
   async function handleFile(f: File) {
     setError(null);
@@ -49,72 +61,184 @@ function JDPage() {
     }
   }
 
+  const highConfidenceCount = jd?.skills.filter((s) => s.confidence === "high").length || 0;
+  const categoriesPresent = Array.from(new Set(jd?.skills.map((s) => s.category_code) || []));
+
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="space-y-4">
-        <header>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Step 01 · JD Analytics</div>
-          <h1 className="mt-2 font-display text-3xl font-bold">Upload a job description.</h1>
-          <p className="mt-2 text-sm text-muted-text">
-            RehoX reads the JD with Gemini AI and returns the skills it's really asking for — each with a
-            category code and a confidence tag.
+    <div className="grid gap-8 md:grid-cols-12">
+      {/* Left Column: Upload Panel */}
+      <div className="space-y-6 md:col-span-5">
+        <header className="space-y-2">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink-text md:text-4xl">
+            JD Analytics
+          </h1>
+          <p className="text-sm leading-relaxed text-muted-text">
+            Upload any job document as a <strong className="text-ink-text font-medium">PDF or DOCX</strong> to analyze key responsibilities, extract technical requirements, and view mapped skill signals.
           </p>
         </header>
 
-        <DropZone label="Upload a JD" onFile={handleFile} loading={loading} />
+        {/* Upload Drop Zone */}
+        <div className="rounded-2xl border border-line/60 bg-panel/60 p-2 backdrop-blur-sm shadow-sm">
+          <DropZone 
+            label="Drop JD file here or click to browse" 
+            onFile={handleFile} 
+            loading={loading} 
+            accept=".pdf,.docx,.txt"
+          />
+        </div>
 
+        {/* Error Alert */}
         {error && (
-          <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <span className="mono font-semibold">Error · </span>{error}
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400 backdrop-blur-sm">
+            <div className="flex items-center gap-2 font-medium">
+              <svg className="h-4 w-4 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>Extraction Failed</span>
+            </div>
+            <p className="mt-1 text-xs text-red-300/80">{error}</p>
           </div>
         )}
-
-        <div className="rounded-xl border border-line bg-panel/40 p-4">
-          <label className="mono text-[10px] uppercase tracking-widest text-muted-text">
-            Or try a sample JD (no API call)
-          </label>
-          <select
-            className="mt-2 w-full rounded-md border border-line bg-ink px-3 py-2 text-sm text-ink-text focus:border-brass focus:outline-none"
-            defaultValue=""
-            onChange={(e) => e.target.value && pickSample(e.target.value)}
-          >
-            <option value="" disabled>Select a company · role</option>
-            {SAMPLE_JDS.map((j) => (
-              <option key={j.source_file} value={j.source_file}>{j.company} — {j.role}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
-      <div>
+      {/* Right Column: Skill Signal Breakdown */}
+      <div className="md:col-span-7">
         {loading ? (
-          <PaperCard title="Reading JD" subtitle="Gemini is extracting required skills…">
-            <div className="space-y-2">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-10 animate-pulse rounded bg-black/5" />
+          <div className="rounded-2xl border border-line bg-panel/80 p-8 text-ink-text shadow-md backdrop-blur">
+            <div className="flex items-center gap-3 border-b border-line/40 pb-4">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-brass border-t-transparent" />
+              <div>
+                <h3 className="font-display text-lg font-bold">Analyzing Job Description</h3>
+                <p className="text-xs text-muted-text">Parsing text, identifying role scope & mapping required competencies…</p>
+              </div>
+            </div>
+            <div className="mt-6 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-xl border border-line/40 bg-ink/40 p-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-1/3 animate-pulse rounded bg-line/60" />
+                    <div className="h-3 w-2/3 animate-pulse rounded bg-line/40" />
+                  </div>
+                  <div className="h-6 w-20 animate-pulse rounded-full bg-line/60" />
+                </div>
               ))}
             </div>
-          </PaperCard>
+          </div>
         ) : jd ? (
-          <div className="space-y-4">
-            <PaperCard title={`JD · ${jd.source_file}`} subtitle={`${jd.company} — ${jd.role}`}>
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Target Role Banner Card */}
+            <div className="rounded-2xl border border-brass/40 bg-gradient-to-br from-panel/90 via-panel/60 to-brass/10 p-6 shadow-xl backdrop-blur-md">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="mono text-[10px] uppercase tracking-widest text-brass font-medium">
+                    Target Role & Company
+                  </div>
+                  <h2 className="mt-1 font-display text-2xl font-bold text-ink-text md:text-3xl">
+                    {jd.role && jd.role !== "Unknown" ? jd.role : "Extracted Role"}
+                  </h2>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {jd.company && jd.company !== "Unknown" && (
+                      <span className="inline-flex items-center rounded-lg bg-brass/20 px-3 py-1 text-xs font-semibold text-brass border border-brass/30">
+                        🏢 {jd.company}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center rounded-lg bg-ink/80 border border-line px-3 py-1 mono text-[11px] text-muted-text">
+                      📄 {jd.source_file}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Analytics Metrics Bar */}
+              <div className="mt-6 grid grid-cols-3 gap-3 border-t border-line/40 pt-4 text-center">
+                <div className="rounded-xl border border-line/30 bg-ink/50 p-3">
+                  <div className="font-display text-2xl font-bold text-ink-text">{jd.skills.length}</div>
+                  <div className="mono text-[10px] uppercase tracking-wider text-muted-text mt-0.5">Skills Extracted</div>
+                </div>
+                <div className="rounded-xl border border-line/30 bg-ink/50 p-3">
+                  <div className="font-display text-2xl font-bold text-brass">{highConfidenceCount}</div>
+                  <div className="mono text-[10px] uppercase tracking-wider text-muted-text mt-0.5">Must-Have (High)</div>
+                </div>
+                <div className="rounded-xl border border-line/30 bg-ink/50 p-3">
+                  <div className="font-display text-2xl font-bold text-emerald-400">{categoriesPresent.length}</div>
+                  <div className="mono text-[10px] uppercase tracking-wider text-muted-text mt-0.5">Categories</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Skill Signal Breakdown Card List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="font-display text-lg font-bold text-ink-text">Skill Signal Breakdown</h3>
+                <span className="mono text-xs text-muted-text">{jd.skills.length} requirements identified</span>
+              </div>
+
               {jd.skills.length === 0 ? (
-                <p className="text-sm text-muted-text">No skills extracted. Try a longer JD.</p>
+                <div className="rounded-2xl border border-line bg-panel/30 p-8 text-center text-muted-text">
+                  No skill signals detected. Try uploading a more comprehensive JD.
+                </div>
               ) : (
-                jd.skills.map((s, i) => <PaperSkillRow key={i} skill={s} />)
+                <div className="grid gap-3">
+                  {jd.skills.map((s, i) => {
+                    const catColor = categoryColors[s.category_code] || categoryColors.OTHER;
+                    const confStyle = confidenceStyles[s.confidence] || confidenceStyles.medium;
+                    const catLabel = CATEGORY_LABEL[s.category_code] || s.category_code;
+
+                    return (
+                      <div 
+                        key={i} 
+                        className="group relative overflow-hidden rounded-xl border border-line/60 bg-panel/50 p-4 transition-all duration-200 hover:border-brass/50 hover:bg-panel/80 hover:shadow-lg"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Category Code Pill */}
+                              <span className={`inline-flex items-center rounded-md px-2 py-0.5 mono text-[11px] font-semibold border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
+                                {catLabel} · {s.category_code}
+                              </span>
+                              
+                              {/* Skill Name */}
+                              <h4 className="font-display text-base font-semibold text-ink-text group-hover:text-brass transition-colors">
+                                {s.skill_name}
+                              </h4>
+                            </div>
+
+                            {/* Evidence Quote */}
+                            {s.evidence && (
+                              <div className="mt-2 rounded-lg border border-line/30 bg-ink/40 px-3 py-2 text-xs italic text-muted-text/90">
+                                "{s.evidence}"
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Confidence Tag */}
+                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 mono text-[10px] font-medium uppercase tracking-wider ${confStyle.bg} ${confStyle.text}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${confStyle.dot}`} />
+                            {s.confidence}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-            </PaperCard>
-            <div className="flex justify-end">
+            </div>
+
+            {/* Navigation Button */}
+            <div className="flex justify-end pt-2">
               <button
                 onClick={() => nav({ to: "/resume" })}
-                className="rounded-md bg-brass px-4 py-2 text-sm font-medium text-primary-foreground hover:brightness-110"
+                className="group flex items-center gap-2 rounded-xl bg-brass px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:brightness-110 active:scale-95"
               >
-                Continue to Resume →
+                <span>Continue to Resume Parsing</span>
+                <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </button>
             </div>
           </div>
         ) : (
-          <EmptyDial caption="Upload a JD or pick a sample to see what it's really asking for." />
+          <EmptyDial caption="Upload a Job Description PDF or DOCX file to analyze skill requirements and category signals." />
         )}
       </div>
     </div>
@@ -123,18 +247,18 @@ function JDPage() {
 
 export function EmptyDial({ caption }: { caption: string }) {
   return (
-    <div className="grid place-items-center rounded-xl border border-dashed border-line bg-panel/20 p-10">
-      <svg width="220" height="220" viewBox="0 0 220 220" className="opacity-50">
-        <circle cx="110" cy="110" r="92" fill="none" stroke="var(--line)" />
-        <circle cx="110" cy="110" r="22" fill="none" stroke="var(--line)" />
-        {Array.from({length:12}).map((_,i)=>{
-          const a = -Math.PI/2 + i * (Math.PI*2/12);
-          const x1 = 110 + Math.cos(a)*22, y1 = 110 + Math.sin(a)*22;
-          const x2 = 110 + Math.cos(a)*92, y2 = 110 + Math.sin(a)*92;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--line)" />;
+    <div className="grid place-items-center rounded-2xl border border-dashed border-line bg-panel/20 p-12 text-center">
+      <svg width="200" height="200" viewBox="0 0 220 220" className="opacity-40">
+        <circle cx="110" cy="110" r="92" fill="none" stroke="var(--line)" strokeWidth="1.5" />
+        <circle cx="110" cy="110" r="22" fill="none" stroke="var(--line)" strokeWidth="1.5" />
+        {Array.from({ length: 12 }).map((_, i) => {
+          const a = -Math.PI / 2 + i * ((Math.PI * 2) / 12);
+          const x1 = 110 + Math.cos(a) * 22, y1 = 110 + Math.sin(a) * 22;
+          const x2 = 110 + Math.cos(a) * 92, y2 = 110 + Math.sin(a) * 92;
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--line)" strokeWidth="1.5" />;
         })}
       </svg>
-      <p className="mt-6 max-w-xs text-center text-sm text-muted-text">{caption}</p>
+      <p className="mt-6 max-w-xs text-sm text-muted-text leading-relaxed">{caption}</p>
     </div>
   );
 }

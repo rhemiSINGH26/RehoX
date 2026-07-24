@@ -68,7 +68,7 @@ function ProfilePage() {
       <div className="space-y-10">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <div className="mono text-xs uppercase tracking-widest text-brass">Step 03 · Profile Builder</div>
+            <div className="mono text-xs uppercase tracking-widest text-brass">Profile Builder</div>
             <h1 className="mt-2 font-display text-3xl font-bold">Your profile.</h1>
           </div>
           <button

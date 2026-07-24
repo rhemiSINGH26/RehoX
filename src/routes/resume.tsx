@@ -7,7 +7,7 @@ import { SAMPLE_RESUMES } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import type { Profile } from "@/lib/rehox/types";
 import { fileToText } from "@/lib/rehox/file-to-text";
-import { extractResumeSkills } from "@/lib/rehox/resume-extract.server";
+import { extractResumeSkills } from "@/lib/rehox/resume-extract";
 
 export const Route = createFileRoute("/resume")({
   head: () => ({
@@ -72,7 +72,7 @@ function ResumePage() {
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4">
         <header>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Step 02 · Resume Parsing</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass">Resume Parsing</div>
           <h1 className="mt-2 font-display text-3xl font-bold">Upload a resume to see what it shows.</h1>
           <p className="mt-2 text-sm text-muted-text">
             Skills, projects, education, experience — extracted by Gemini AI as structured data.

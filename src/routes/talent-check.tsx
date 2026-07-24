@@ -46,7 +46,7 @@ function TalentCheckPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Step 04 · Talent Check</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass">Talent Check</div>
           <h1 className="mt-2 font-display text-3xl font-bold">Are you at the company's bar?</h1>
         </div>
         <label className="text-sm">

@@ -54,7 +54,7 @@ function SkillMatchPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Step 05 · Skill Match</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass">Skill Match</div>
           <h1 className="mt-2 font-display text-3xl font-bold">How well do you fit this JD?</h1>
         </div>
         <label className="text-sm">

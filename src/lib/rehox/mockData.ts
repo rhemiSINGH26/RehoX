@@ -94,6 +94,147 @@ export const SAMPLE_JDS: ParsedSource[] = [
   },
 ];
 
+export const SAMPLE_JD_TEXTS: Record<string, { company: string; role: string; text: string }> = {
+  "google_swe.pdf": {
+    company: "Google",
+    role: "Software Engineer",
+    text: `Job Description: Software Engineer - Google
+Company: Google
+Role: Software Engineer
+
+About the Role:
+As a Software Engineer at Google, you will develop core infrastructure, large-scale distributed systems, and user-facing applications. 
+
+Key Responsibilities:
+- Design, test, deploy, and maintain large-scale distributed systems and software applications.
+- Build fault-tolerant pipelines and high-availability backend services.
+- Write clean, maintainable production code following object-oriented design patterns.
+- Collaborate across cross-functional teams and time zones to deliver high-quality technical solutions.
+
+What We're Looking For:
+- Strong grasp of core Data Structures and Algorithms (DSA).
+- Proficiency in at least one object-oriented or systems programming language such as C++, Java, or Python.
+- Deep understanding of Operating System (OS) internals, memory management, and Linux environment.
+- Demonstrated experience in Object-Oriented Design (OOD) and distributed systems architecture.
+- Excellent written and verbal communication skills.`
+  },
+  "google_ds.pdf": {
+    company: "Google",
+    role: "Data Scientist",
+    text: `Job Description: Data Scientist - Google
+Company: Google
+Role: Data Scientist
+
+About the Role:
+We are seeking an analytical Data Scientist to turn massive datasets into actionable insights and machine learning models for core Google products.
+
+Key Responsibilities:
+- Extract, clean, and analyze petabyte-scale data stored in distributed SQL databases and Google Cloud Platform (GCP).
+- Develop applied Machine Learning (ML) models and statistical algorithms for product feature optimization.
+- Perform rigorous statistical testing, hypothesis validation, and quantitative aptitude modeling.
+- Translate technical analytical findings into compelling presentations for leadership and non-technical stakeholders.
+
+What We're Looking For:
+- Fluent in Python (pandas, numpy, scikit-learn) for data analysis and modeling.
+- Advanced SQL proficiency against large-scale enterprise data warehouses.
+- Strong foundation in Applied Machine Learning, Deep Learning, and Artificial Intelligence (AI).
+- Experience working with Cloud Platforms (GCP, AWS, or Azure).
+- Exceptional communication skills to present insights clearly.`
+  },
+  "microsoft_swe.pdf": {
+    company: "Microsoft",
+    role: "Software Engineer",
+    text: `Job Description: Software Engineer - Microsoft
+Company: Microsoft
+Role: Software Engineer
+
+About the Role:
+Join Microsoft Cloud & AI team to build mission-critical enterprise services powering Microsoft Azure and .NET ecosystem.
+
+Key Responsibilities:
+- Architect, build, and maintain scalable cloud services running on Microsoft Azure.
+- Implement robust C#/.NET microservices with high reliability and low latency.
+- Work closely in an Agile software engineering environment with modern CI/CD pipelines and automated testing.
+- Design database schemas and query patterns using Microsoft SQL Server.
+
+What We're Looking For:
+- Strong proficiency in C# and .NET technology stack.
+- Hands-on experience with Microsoft Azure cloud services.
+- Solid understanding of Distributed Systems design, API development, and solid DSA fundamentals.
+- Practical experience with relational databases, specifically SQL Server.
+- Familiarity with modern Software Engineering (SWE) practices including Git, CI/CD, and unit testing.`
+  },
+  "microsoft_da.pdf": {
+    company: "Microsoft",
+    role: "Data Analyst",
+    text: `Job Description: Data Analyst - Microsoft
+Company: Microsoft
+Role: Data Analyst
+
+About the Role:
+Microsoft is looking for a Data Analyst to drive business reporting and business intelligence dashboards for executive decision making.
+
+Key Responsibilities:
+- Write complex SQL queries and data integration scripts to create automated reporting pipelines.
+- Build interactive Power BI dashboards and visual analytics reports for leadership.
+- Analyze large numerical datasets to derive strategic insights using quantitative aptitude and statistics.
+- Translate business requirements into technical metrics and communicate data-driven insights.
+
+What We're Looking For:
+- Expert-level SQL skills for querying and data manipulation.
+- Extensive experience building executive dashboards in Power BI.
+- Strong numerical aptitude, statistical analysis, and Excel mastery.
+- Excellent communication skills to work across cross-functional teams.
+- Familiarity with Azure Data services (Synapse, Data Factory) is a plus.`
+  },
+  "ofss_ase.pdf": {
+    company: "Oracle Financial Services Software",
+    role: "Associate Software Engineer",
+    text: `Job Description: Associate Software Engineer - Oracle Financial Services Software
+Company: Oracle Financial Services Software
+Role: Associate Software Engineer
+
+About the Role:
+Join OFSS as an Associate Software Engineer to build and enhance enterprise core banking products like Oracle FLEXCUBE.
+
+Key Responsibilities:
+- Develop, debug, and maintain banking domain software modules written in Java.
+- Write advanced Oracle PL/SQL stored procedures, triggers, and relational database queries.
+- Follow object-oriented design principles to structure complex financial software solutions.
+- Adhere to rigorous software engineering (SWE) methodologies, code reviews, and SDLC guidelines.
+
+What We're Looking For:
+- Strong programming fundamentals in Java on core frameworks.
+- Advanced knowledge of Oracle SQL and PL/SQL.
+- Solid understanding of Object-Oriented Design (OOD) in banking software.
+- High quantitative aptitude and analytical thinking.
+- Good verbal and written communication skills for client-facing interaction.`
+  },
+  "ofss_asa.pdf": {
+    company: "Oracle Financial Services Software",
+    role: "Application Support Analyst",
+    text: `Job Description: Application Support Analyst - Oracle Financial Services Software
+Company: Oracle Financial Services Software
+Role: Application Support Analyst
+
+About the Role:
+OFSS is hiring an Application Support Analyst to provide high-availability L2/L3 support and system troubleshooting for core financial solutions.
+
+Key Responsibilities:
+- Diagnose, triage, and resolve production system issues using complex SQL queries and database inspection.
+- Execute shell scripts and command-line utilities on Unix/Linux server environments.
+- Monitor networking protocols and banking infrastructure topologies to ensure SLA compliance.
+- Coordinate directly with client teams under high pressure to resolve critical incidents.
+
+What We're Looking For:
+- Hands-on comfort with Unix/Linux operating system commands and shell scripting.
+- Strong SQL diagnostic and querying skills.
+- Basic understanding of networking protocols and infrastructure topologies.
+- Ability to read and patch existing Java code modules.
+- Logical debugging aptitude and strong client-facing communication skills.`
+  }
+};
+
 export interface SampleResume extends ParsedSource {
   persona: string;
   displayName: string;

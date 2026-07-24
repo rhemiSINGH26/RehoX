@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { z } from "zod";
 import type { ParsedSource, Skill, CategoryCode } from "./types";
 
-// ── Zod schema matching the shared data contract ────────────────────────────
+// ── Zod schema ────────────────────────────────────────────────────────────────
 
 const VALID_CATEGORY_CODES: CategoryCode[] = [
   "DSA", "COD", "OOD", "APTI", "COMM", "AI",
@@ -17,55 +17,61 @@ const SkillSchema = z.object({
   confidence: z.enum(["high", "medium", "low"]),
 });
 
-const ParsedSourceSchema = z.object({
-  source_type: z.literal("jd"),
+const ParsedResumeSchema = z.object({
+  source_type: z.literal("resume"),
   source_file: z.string(),
   company: z.string(),
   role: z.string(),
+  education: z.string().optional(),
+  projects: z.array(z.string()).optional(),
+  experience: z.array(z.string()).optional(),
   skills: z.array(SkillSchema),
 });
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a talent intelligence engine. Your task is to extract a structured skill list from a Job Description (JD).
+const SYSTEM_PROMPT = `You are a talent intelligence engine. Your task is to extract structured skill data from a candidate's resume.
 
 RADIX skill categories (use ONLY these codes):
 - COD  : Coding / Programming languages
 - DSA  : Data Structures & Algorithms
 - OOD  : Object-Oriented Design & patterns
-- APTI : Quantitative Aptitude / Logical reasoning / Statistics
-- COMM : Communication & collaboration
-- AI   : AI / ML / Data Science / BI tools
+- APTI : Quantitative Aptitude / Logical reasoning / Statistics / Math
+- COMM : Communication & collaboration / leadership
+- AI   : AI / ML / Data Science / BI tools / Analytics
 - CLOUD: Cloud platforms (AWS, GCP, Azure, etc.)
-- SQL  : SQL / Databases / Data modeling
-- SWE  : Software Engineering practices (CI/CD, testing, Agile, SDLC)
+- SQL  : SQL / Databases / Data modeling / NoSQL
+- SWE  : Software Engineering practices (CI/CD, testing, Agile, code review)
 - SYSD : System Design / Distributed systems / Architecture
-- NETW : Networking / Protocols
-- OS   : Operating Systems / Linux / Kernel / Shell
+- NETW : Networking / Protocols / TCP/IP
+- OS   : Operating Systems / Linux / Shell scripting
 - OTHER: Anything that does not fit the above
 
 Rules:
-1. Map skills to categories by meaning, not just keywords. "Build fault-tolerant pipelines" → SYSD.
-2. Focus on "Key Responsibilities" and "What We're Looking For" sections — they carry the strongest signal.
-3. Use evidence: quote the exact JD phrase that reveals the skill. Keep it short (under 80 chars).
-4. Confidence:
-   - "high" = explicitly stated as required/must-have
-   - "medium" = implied or preferred
-   - "low"  = nice-to-have or vaguely mentioned
-5. Named technologies count as skills (e.g., "Kubernetes" → CLOUD, "Redis" → SQL/COD by context).
-6. Do not repeat the same skill_name twice.
+1. Infer skills from the resume's projects, experience, and descriptions — not just a skills section.
+2. Evidence should quote or paraphrase the resume line that reveals the skill. Keep it short.
+3. Confidence:
+   - "high" = used in production work or 1+ years of experience
+   - "medium" = used in projects or coursework
+   - "low"  = mentioned once or listed without context
+4. Extract role from the most recent job title or stated objective.
+5. Do not repeat the same skill_name twice.
+6. For "company", return "" (empty string) since this is a resume.
 
 Output ONLY valid JSON matching this schema exactly:
 {
-  "source_type": "jd",
+  "source_type": "resume",
   "source_file": "<filename>",
-  "company": "<company name or 'Unknown'>",
-  "role": "<role title>",
+  "company": "",
+  "role": "<inferred role or most recent title>",
+  "education": "<highest degree and institution>",
+  "projects": ["<short project description>", ...],
+  "experience": ["<role at company, duration>", ...],
   "skills": [
     {
       "skill_name": "<concise skill name>",
       "category_code": "<one of the codes above>",
-      "evidence": "<quoted JD phrase>",
+      "evidence": "<resume phrase that shows this skill>",
       "confidence": "high" | "medium" | "low"
     }
   ]
@@ -73,28 +79,20 @@ Output ONLY valid JSON matching this schema exactly:
 
 // ── Server function ───────────────────────────────────────────────────────────
 
-export const extractJdSkills = createServerFn({ method: "POST" })
+export const extractResumeSkills = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      text: z.string().min(50, "JD text is too short to analyse"),
+      text: z.string().min(50, "Resume text is too short to analyse"),
       fileName: z.string(),
     }),
   )
   .handler(async ({ data: { text, fileName } }): Promise<ParsedSource> => {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not set. Add it to your .env file.");
+      throw new Error("GROQ_API_KEY is not set. Add it to your .env file.");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.1,          // low temp for structured extraction
-        maxOutputTokens: 2048,
-      },
-    });
+    const groq = new Groq({ apiKey });
 
     const prompt = `${SYSTEM_PROMPT}
 
@@ -102,29 +100,37 @@ export const extractJdSkills = createServerFn({ method: "POST" })
 
 FILE: ${fileName}
 
-JD TEXT:
-${text.slice(0, 12000)}`; // cap at ~12 k chars to stay within free-tier limits
+RESUME TEXT:
+${text.slice(0, 15000)}`;
 
     let raw: string;
     try {
-      const result = await model.generateContent(prompt);
-      raw = result.response.text();
+      const completion = await groq.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are an expert HR AI assistant that outputs raw JSON strictly matching the requested schema." },
+          { role: "user", content: prompt },
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+      });
+
+      raw = completion.choices[0]?.message?.content || "";
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(`Gemini API error: ${msg}`);
+      throw new Error(`Groq API error: ${msg}`);
     }
 
-    // Parse and validate the JSON response
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      throw new Error(`Gemini returned invalid JSON: ${raw.slice(0, 200)}`);
+      throw new Error(`Groq returned invalid JSON: ${raw.slice(0, 200)}`);
     }
 
-    const validated = ParsedSourceSchema.safeParse(parsed);
+    const validated = ParsedResumeSchema.safeParse(parsed);
     if (!validated.success) {
-      // Attempt a best-effort repair — return what we have with the fileName injected
+      // Best-effort repair
       const partial = parsed as Record<string, unknown>;
       const skills = Array.isArray(partial.skills)
         ? (partial.skills as unknown[])
@@ -147,14 +153,16 @@ ${text.slice(0, 12000)}`; // cap at ~12 k chars to stay within free-tier limits
         : [];
 
       return {
-        source_type: "jd",
+        source_type: "resume",
         source_file: fileName,
-        company: typeof partial.company === "string" ? partial.company : "Unknown",
+        company: "",
         role: typeof partial.role === "string" ? partial.role : "Unknown",
+        education: typeof partial.education === "string" ? partial.education : undefined,
+        projects: Array.isArray(partial.projects) ? (partial.projects as string[]) : [],
+        experience: Array.isArray(partial.experience) ? (partial.experience as string[]) : [],
         skills,
       };
     }
 
-    // Inject the real fileName (Gemini might hallucinate it)
     return { ...validated.data, source_file: fileName };
   });
