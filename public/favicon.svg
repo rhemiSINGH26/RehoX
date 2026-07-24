@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#0f172a"/>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg-grad)" stroke="url(#border-grad)" stroke-width="2"/>
+  
+  <!-- Outer precision ring -->
+  <circle cx="32" cy="32" r="20" stroke="#c98a3e" stroke-width="2" stroke-dasharray="3 3" opacity="0.6"/>
+  
+  <!-- Stylized R and X crosshair -->
+  <path d="M22 18H34C38.4183 18 42 21.5817 42 26C42 30.4183 38.4183 34 34 34H22V18Z" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 18V46" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M31 34L43 46" stroke="#60a5fa" stroke-width="3.5" stroke-linecap="round"/>
+  
+  <!-- Center signal dot -->
+  <circle cx="32" cy="32" r="3" fill="#10b981"/>
+
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#090d16"/>
+      <stop offset="1" stop-color="#141c2e"/>
+    </linearGradient>
+    <linearGradient id="border-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c98a3e"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+</svg>
