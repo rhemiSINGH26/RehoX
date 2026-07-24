@@ -6,6 +6,8 @@ import { EmptyDial } from "./jd";
 import { SAMPLE_RESUMES } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import type { Profile } from "@/lib/rehox/types";
+import { fileToText } from "@/lib/rehox/file-to-text";
+import { extractResumeSkills } from "@/lib/rehox/resume-extract.server";
 
 export const Route = createFileRoute("/resume")({
   head: () => ({
@@ -22,21 +24,30 @@ export const Route = createFileRoute("/resume")({
 function ResumePage() {
   const resume = useRehox((s) => s.resume);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const nav = useNavigate();
 
   function pickSample(file: string) {
     const r = SAMPLE_RESUMES.find((x) => x.source_file === file);
     if (!r) return;
+    setError(null);
     setLoading(true);
-    setTimeout(() => { rehoxStore.set({ resume: r }); setLoading(false); }, 500);
+    setTimeout(() => { rehoxStore.set({ resume: r }); setLoading(false); }, 400);
   }
-  function handleFile(f: File) {
+
+  async function handleFile(f: File) {
+    setError(null);
     setLoading(true);
-    setTimeout(() => {
-      const base = SAMPLE_RESUMES[0];
-      rehoxStore.set({ resume: { ...base, source_file: f.name } });
+    try {
+      const text = await fileToText(f);
+      const result = await extractResumeSkills({ data: { text, fileName: f.name } });
+      rehoxStore.set({ resume: result });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+    } finally {
       setLoading(false);
-    }, 700);
+    }
   }
 
   function useForProfile() {
@@ -63,11 +74,23 @@ function ResumePage() {
         <header>
           <div className="mono text-xs uppercase tracking-widest text-brass">Step 02 · Resume Parsing</div>
           <h1 className="mt-2 font-display text-3xl font-bold">Upload a resume to see what it shows.</h1>
-          <p className="mt-2 text-sm text-muted-text">Skills, projects, education, experience — extracted as structured data.</p>
+          <p className="mt-2 text-sm text-muted-text">
+            Skills, projects, education, experience — extracted by Gemini AI as structured data.
+          </p>
         </header>
+
         <DropZone label="Upload a resume" onFile={handleFile} loading={loading} />
+
+        {error && (
+          <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <span className="mono font-semibold">Error · </span>{error}
+          </div>
+        )}
+
         <div className="rounded-xl border border-line bg-panel/40 p-4">
-          <label className="mono text-[10px] uppercase tracking-widest text-muted-text">Try a sample resume</label>
+          <label className="mono text-[10px] uppercase tracking-widest text-muted-text">
+            Or try a sample resume (no API call)
+          </label>
           <select
             className="mt-2 w-full rounded-md border border-line bg-ink px-3 py-2 text-sm text-ink-text focus:border-brass focus:outline-none"
             defaultValue=""
@@ -83,7 +106,7 @@ function ResumePage() {
 
       <div>
         {loading ? (
-          <PaperCard title="Reading resume" subtitle="Extracting skills and structure…">
+          <PaperCard title="Reading resume" subtitle="Gemini is extracting skills and structure…">
             <div className="space-y-2">{[...Array(6)].map((_,i)=><div key={i} className="h-10 animate-pulse rounded bg-black/5"/>)}</div>
           </PaperCard>
         ) : resume ? (
@@ -106,7 +129,7 @@ function ResumePage() {
             </div>
           </div>
         ) : (
-          <EmptyDial caption="Upload a resume to see what it shows." />
+          <EmptyDial caption="Upload a resume or pick a sample to see what it shows." />
         )}
       </div>
     </div>
