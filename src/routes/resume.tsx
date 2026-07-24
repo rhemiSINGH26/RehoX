@@ -7,7 +7,7 @@ import { SAMPLE_RESUMES } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import type { Profile } from "@/lib/rehox/types";
 import { fileToText } from "@/lib/rehox/file-to-text";
-import { extractResumeSkills } from "@/lib/rehox/resume-extract.server";
+import { extractResumeSkills } from "@/lib/rehox/resume-extract";
 
 export const Route = createFileRoute("/resume")({
   head: () => ({

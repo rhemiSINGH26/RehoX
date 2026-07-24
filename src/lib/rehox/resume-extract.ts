@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
 import type { ParsedSource, Skill, CategoryCode } from "./types";
 
@@ -92,9 +91,10 @@ export const extractResumeSkills = createServerFn({ method: "POST" })
       throw new Error("GEMINI_API_KEY is not set. Add it to your .env file.");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.5-flash-lite",
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.1,
