@@ -106,7 +106,8 @@ function SkillMatchPage() {
           },
         };
 
-        const response = await fetch("http://localhost:8000/api/match", {
+        const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
+        const response = await fetch(`${apiBaseUrl}/match`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
