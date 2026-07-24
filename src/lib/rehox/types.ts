@@ -1,15 +1,57 @@
 export type CategoryCode =
-  | "DSA" | "COD" | "OOD" | "APTI" | "COMM" | "AI"
-  | "CLOUD" | "SQL" | "SWE" | "SYSD" | "NETW" | "OS" | "OTHER";
+  | "DSA"
+  | "COD"
+  | "OOD"
+  | "APTI"
+  | "COMM"
+  | "AI"
+  | "CLOUD"
+  | "SQL"
+  | "SWE"
+  | "SYSD"
+  | "NETW"
+  | "OS"
+  | "OTHER";
 
-export const CATEGORY_ORDER: CategoryCode[] = [
-  "COD","DSA","OOD","APTI","COMM","AI","CLOUD","SQL","SWE","SYSD","NETW","OS",
+export type TalentCheckCategoryCode = Exclude<CategoryCode, "OTHER">;
+export type GapSeverity = "met" | "minor" | "moderate" | "critical";
+export type ReadinessBand =
+  | "Interview Ready"
+  | "Nearly Ready"
+  | "Developing"
+  | "Significant Skill Gaps";
+
+export type CompetencyLevels = Record<TalentCheckCategoryCode, number>;
+
+export const CATEGORY_ORDER: TalentCheckCategoryCode[] = [
+  "COD",
+  "DSA",
+  "OOD",
+  "APTI",
+  "COMM",
+  "AI",
+  "CLOUD",
+  "SQL",
+  "SWE",
+  "SYSD",
+  "NETW",
+  "OS",
 ];
 
 export const CATEGORY_LABEL: Record<CategoryCode, string> = {
-  COD: "Coding", DSA: "DSA", OOD: "OOD", APTI: "Aptitude", COMM: "Communication",
-  AI: "AI", CLOUD: "Cloud", SQL: "SQL", SWE: "SWE", SYSD: "System Design",
-  NETW: "Networking", OS: "OS", OTHER: "Other",
+  COD: "Coding",
+  DSA: "DSA",
+  OOD: "OOD",
+  APTI: "Aptitude",
+  COMM: "Communication",
+  AI: "AI",
+  CLOUD: "Cloud",
+  SQL: "SQL",
+  SWE: "SWE",
+  SYSD: "System Design",
+  NETW: "Networking",
+  OS: "OS",
+  OTHER: "Other",
 };
 
 export interface Skill {
@@ -44,6 +86,7 @@ export interface Profile {
   email: string;
   education: string;
   cgpa?: string;
+  competency_levels?: Partial<Record<TalentCheckCategoryCode, number>>;
   skills: Skill[];
   hackathons: string[];
   internships: string[];
@@ -53,16 +96,30 @@ export interface Profile {
 }
 
 export interface SkillsetGapRow {
-  category_code: CategoryCode;
+  category_code: TalentCheckCategoryCode;
   required_level: number;
   candidate_level: number;
   gap: boolean;
+  severity?: GapSeverity;
+  importance_weight?: number;
+  gap_size?: number;
+  priority?: number;
+}
+
+export interface TalentCheckPriorityItem {
+  category_code: TalentCheckCategoryCode;
+  priority: number;
+  gap_size: number;
+  severity: GapSeverity;
 }
 
 export interface TalentCheckResult {
   company: string;
   skillset_gap: SkillsetGapRow[];
   readiness_score: number;
+  readiness_band?: ReadinessBand;
+  explanation?: string;
+  top_priorities?: TalentCheckPriorityItem[];
 }
 
 export interface SkillMatchCategoryScore {

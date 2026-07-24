@@ -6,13 +6,38 @@ import type { ParsedSource, Skill, CategoryCode } from "./types";
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
 const VALID_CATEGORY_CODES: CategoryCode[] = [
-  "DSA", "COD", "OOD", "APTI", "COMM", "AI",
-  "CLOUD", "SQL", "SWE", "SYSD", "NETW", "OS", "OTHER",
+  "DSA",
+  "COD",
+  "OOD",
+  "APTI",
+  "COMM",
+  "AI",
+  "CLOUD",
+  "SQL",
+  "SWE",
+  "SYSD",
+  "NETW",
+  "OS",
+  "OTHER",
 ];
 
 const SkillSchema = z.object({
   skill_name: z.string(),
-  category_code: z.enum(["DSA", "COD", "OOD", "APTI", "COMM", "AI", "CLOUD", "SQL", "SWE", "SYSD", "NETW", "OS", "OTHER"]),
+  category_code: z.enum([
+    "DSA",
+    "COD",
+    "OOD",
+    "APTI",
+    "COMM",
+    "AI",
+    "CLOUD",
+    "SQL",
+    "SWE",
+    "SYSD",
+    "NETW",
+    "OS",
+    "OTHER",
+  ]),
   evidence: z.string(),
   confidence: z.enum(["high", "medium", "low"]),
 });
