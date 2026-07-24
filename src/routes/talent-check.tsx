@@ -1,48 +1,75 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { RADIXRadarChart } from "@/components/rehox/RADIXRadarChart";
 import { ReadinessGaugeRing } from "@/components/rehox/ReadinessGaugeRing";
 import { readinessLabel, runTalentCheck } from "@/lib/rehox/compute";
-import { useRehox } from "@/lib/rehox/store";
+import { buildCandidateProfile } from "@/lib/rehox/profileBuilder";
+import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import { CATEGORY_LABEL } from "@/lib/rehox/types";
 
 export const Route = createFileRoute("/talent-check")({
   head: () => ({
     meta: [
       { title: "Talent Check · RehoX" },
-      { name: "description", content: "Evaluate candidate readiness across the full 12-skillset RADIX framework." },
+      {
+        name: "description",
+        content: "Evaluate candidate readiness across the full 12-skillset RADIX framework.",
+      },
       { property: "og:title", content: "Talent Check · RehoX" },
-      { property: "og:description", content: "Radar dial showing required competency levels vs candidate skill signals." },
+      {
+        property: "og:description",
+        content: "Radar dial showing required competency levels vs candidate skill signals.",
+      },
     ],
   }),
   component: TalentCheckPage,
 });
 
 export function TalentCheckPage() {
-  const profile = useRehox((s) => s.profile);
+  const storedProfile = useRehox((s) => s.profile);
+  const resumeSource = useRehox((s) => s.resume);
   const jd = useRehox((s) => s.jd);
+
+  // Auto-infer profile from resume if storedProfile is not built yet
+  const profile = useMemo(() => {
+    if (storedProfile && (storedProfile.name || storedProfile.skills.length > 0)) {
+      return storedProfile;
+    }
+    if (resumeSource) {
+      return buildCandidateProfile(resumeSource);
+    }
+    return null;
+  }, [storedProfile, resumeSource]);
 
   // Compute Talent Check result deterministically from profile & JD
   const result = useMemo(() => {
     if (!profile) return null;
     return runTalentCheck(
       { competency_levels: profile.competency_levels, skills: profile.skills },
-      jd?.company
+      jd?.company,
     );
   }, [profile, jd]);
+
+  useEffect(() => {
+    if (result) {
+      rehoxStore.set({ talentCheck: result });
+    }
+  }, [result]);
 
   if (!profile) {
     return (
       <EmptyState
-        title="No candidate profile built yet."
+        title="No candidate profile or resume uploaded yet."
         body="Talent Check compares candidate competencies against the full 12-skillset RADIX framework."
-        ctaTo="/profile"
-        ctaLabel="Build candidate profile →"
+        ctaTo="/resume"
+        ctaLabel="Upload candidate resume →"
       />
     );
   }
 
-  const targetTitle = jd ? `${jd.company !== "Unknown" ? jd.company + " — " : ""}${jd.role}` : profile.preferred_roles[0] || "Target Software Engineer Role";
+  const targetTitle = jd
+    ? `${jd.company !== "Unknown" ? jd.company + " — " : ""}${jd.role}`
+    : profile.preferred_roles[0] || "Target Software Engineer Role";
 
   const radarData =
     result?.skillset_gap.map((row) => ({
@@ -55,7 +82,7 @@ export function TalentCheckPage() {
     ? [...result.skillset_gap].sort(
         (a, b) =>
           Number(b.gap) - Number(a.gap) ||
-          (b.required_level - b.candidate_level) - (a.required_level - a.candidate_level),
+          b.required_level - b.candidate_level - (a.required_level - a.candidate_level),
       )
     : [];
 
@@ -67,8 +94,12 @@ export function TalentCheckPage() {
       {/* Top Navigation Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Talent Readiness Visualization</div>
-          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Competency Radar Check</h1>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">
+            Talent Readiness Visualization
+          </div>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">
+            Competency Radar Check
+          </h1>
           <p className="mt-1 text-xs text-muted-text">
             Evaluation target: <strong className="text-ink-text font-medium">{targetTitle}</strong>
           </p>
@@ -94,7 +125,9 @@ export function TalentCheckPage() {
                 <div className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
                   RADIX 12-Skillset Spider Radar
                 </div>
-                <span className="mono text-[11px] text-muted-text">{metCount}/12 Requirements Met</span>
+                <span className="mono text-[11px] text-muted-text">
+                  {metCount}/12 Requirements Met
+                </span>
               </div>
               <RADIXRadarChart data={radarData} size={420} showLegend={true} />
             </div>
@@ -121,8 +154,12 @@ export function TalentCheckPage() {
 
                 <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5">
-                    <div className="mono text-[10px] uppercase font-bold text-emerald-400">Met Skills</div>
-                    <div className="font-display text-lg font-bold text-emerald-400">{metCount}</div>
+                    <div className="mono text-[10px] uppercase font-bold text-emerald-400">
+                      Met Skills
+                    </div>
+                    <div className="font-display text-lg font-bold text-emerald-400">
+                      {metCount}
+                    </div>
                   </div>
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5">
                     <div className="mono text-[10px] uppercase font-bold text-amber-400">Gaps</div>
@@ -140,7 +177,9 @@ export function TalentCheckPage() {
                 <span className="h-2 w-2 rounded-full bg-brass animate-pulse" />
                 RADIX Evaluation Summary
               </div>
-              <p className="text-xs text-muted-text leading-relaxed font-medium">{result.explanation}</p>
+              <p className="text-xs text-muted-text leading-relaxed font-medium">
+                {result.explanation}
+              </p>
             </div>
           )}
 
@@ -151,7 +190,9 @@ export function TalentCheckPage() {
                 <div className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
                   Top Priority Skill Focus Areas
                 </div>
-                <span className="mono text-[10px] text-amber-400 font-semibold uppercase">High Leverage Gaps</span>
+                <span className="mono text-[10px] text-amber-400 font-semibold uppercase">
+                  High Leverage Gaps
+                </span>
               </div>
               <div className="grid gap-3.5 md:grid-cols-3">
                 {result.top_priorities.map((priority) => (
@@ -160,8 +201,12 @@ export function TalentCheckPage() {
                     className="flex items-center justify-between rounded-xl border border-line/60 bg-ink/60 p-4 shadow-sm"
                   >
                     <div className="space-y-1">
-                      <span className="mono text-[11px] font-bold text-brass">{priority.category_code}</span>
-                      <div className="text-xs font-bold text-ink-text">{CATEGORY_LABEL[priority.category_code]}</div>
+                      <span className="mono text-[11px] font-bold text-brass">
+                        {priority.category_code}
+                      </span>
+                      <div className="text-xs font-bold text-ink-text">
+                        {CATEGORY_LABEL[priority.category_code]}
+                      </div>
                     </div>
                     <span className="mono text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30">
                       {priority.severity}
@@ -175,14 +220,21 @@ export function TalentCheckPage() {
           {/* 12-Skillset Grid Cards Visualization */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
-              <h2 className="font-display text-xl font-bold text-ink-text">12-Category Skillset Competency Matrix</h2>
-              <span className="mono text-xs text-muted-text font-medium">RADIX Competency Levels (1-10)</span>
+              <h2 className="font-display text-xl font-bold text-ink-text">
+                12-Category Skillset Competency Matrix
+              </h2>
+              <span className="mono text-xs text-muted-text font-medium">
+                RADIX Competency Levels (1-10)
+              </span>
             </div>
 
             <div className="grid gap-3.5 md:grid-cols-3">
               {result.skillset_gap.map((row) => {
                 const isMet = !row.gap;
-                const percent = Math.min(100, Math.round((row.candidate_level / Math.max(1, row.required_level)) * 100));
+                const percent = Math.min(
+                  100,
+                  Math.round((row.candidate_level / Math.max(1, row.required_level)) * 100),
+                );
 
                 return (
                   <div
@@ -194,7 +246,9 @@ export function TalentCheckPage() {
                         <span className="mono text-[11px] font-bold text-brass rounded bg-ink px-2 py-0.5 border border-line">
                           {row.category_code}
                         </span>
-                        <span className="text-xs font-bold text-ink-text">{CATEGORY_LABEL[row.category_code]}</span>
+                        <span className="text-xs font-bold text-ink-text">
+                          {CATEGORY_LABEL[row.category_code]}
+                        </span>
                       </div>
                       <span
                         className={[
@@ -211,8 +265,12 @@ export function TalentCheckPage() {
                     {/* Progress Bar */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px] mono">
-                        <span className="text-muted-text">Cand: <strong className="text-ink-text">{row.candidate_level}</strong></span>
-                        <span className="text-muted-text">Req: <strong className="text-brass">{row.required_level}</strong></span>
+                        <span className="text-muted-text">
+                          Cand: <strong className="text-ink-text">{row.candidate_level}</strong>
+                        </span>
+                        <span className="text-muted-text">
+                          Req: <strong className="text-brass">{row.required_level}</strong>
+                        </span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-ink overflow-hidden border border-line/40">
                         <div
@@ -234,7 +292,12 @@ export function TalentCheckPage() {
             >
               <span>Continue to Skill Match</span>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
               </svg>
             </Link>
           </div>

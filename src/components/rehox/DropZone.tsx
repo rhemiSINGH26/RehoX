@@ -12,11 +12,16 @@ export function DropZone({ label, onFile, accept = ".pdf,.docx", loading }: Prop
   const ref = useRef<HTMLInputElement>(null);
   return (
     <label
-      onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDrag(true);
+      }}
       onDragLeave={() => setDrag(false)}
       onDrop={(e) => {
-        e.preventDefault(); setDrag(false);
-        const f = e.dataTransfer.files?.[0]; if (f) onFile(f);
+        e.preventDefault();
+        setDrag(false);
+        const f = e.dataTransfer.files?.[0];
+        if (f) onFile(f);
       }}
       className={[
         "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-colors",
@@ -28,7 +33,10 @@ export function DropZone({ label, onFile, accept = ".pdf,.docx", loading }: Prop
         type="file"
         accept={accept}
         className="sr-only"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onFile(f);
+        }}
       />
       <div className="mono text-[10px] uppercase tracking-widest text-muted-text">
         {loading ? "Reading…" : "Drop or click"}

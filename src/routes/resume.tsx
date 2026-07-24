@@ -11,9 +11,17 @@ export const Route = createFileRoute("/resume")({
   head: () => ({
     meta: [
       { title: "Resume Parsing · RehoX" },
-      { name: "description", content: "Upload a resume document (PDF or DOCX) to extract candidate skills, experience, and education." },
+      {
+        name: "description",
+        content:
+          "Upload a resume document (PDF or DOCX) to extract candidate skills, experience, and education.",
+      },
       { property: "og:title", content: "Resume Parsing · RehoX" },
-      { property: "og:description", content: "Extract structured candidate profile details, evidence, and confidence ratings from any resume." },
+      {
+        property: "og:description",
+        content:
+          "Extract structured candidate profile details, evidence, and confidence ratings from any resume.",
+      },
     ],
   }),
   component: ResumePage,
@@ -36,9 +44,21 @@ const categoryColors: Record<CategoryCode, { bg: string; text: string; border: s
 };
 
 const confidenceStyles: Record<Skill["confidence"], { bg: string; text: string; dot: string }> = {
-  high: { bg: "bg-emerald-500/10 border border-emerald-500/30", text: "text-emerald-400", dot: "bg-emerald-400" },
-  medium: { bg: "bg-amber-500/10 border border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
-  low: { bg: "bg-slate-500/10 border border-slate-500/30", text: "text-slate-400", dot: "bg-slate-400" },
+  high: {
+    bg: "bg-emerald-500/10 border border-emerald-500/30",
+    text: "text-emerald-400",
+    dot: "bg-emerald-400",
+  },
+  medium: {
+    bg: "bg-amber-500/10 border border-amber-500/30",
+    text: "text-amber-400",
+    dot: "bg-amber-400",
+  },
+  low: {
+    bg: "bg-slate-500/10 border border-slate-500/30",
+    text: "text-slate-400",
+    dot: "bg-slate-400",
+  },
 };
 
 export function ResumePage() {
@@ -54,7 +74,7 @@ export function ResumePage() {
       const text = await fileToText(f);
       const result = await extractResumeSkills({ data: { text, fileName: f.name } });
       rehoxStore.set({ resume: result });
-      
+
       // Auto-build and populate the complete Candidate Profile for Profile Builder
       const profile = buildCandidateProfile({ ...result, cv_file: f.name });
       rehoxStore.set({ profile, profileSavedAt: Date.now() });
@@ -90,12 +110,17 @@ export function ResumePage() {
             <div className="h-7 w-7 animate-spin rounded-full border-3 border-brass border-t-transparent" />
             <div>
               <h3 className="font-display text-xl font-bold">Analyzing Resume Document</h3>
-              <p className="text-sm text-muted-text">Extracting candidate competencies, work experience & education details…</p>
+              <p className="text-sm text-muted-text">
+                Extracting candidate competencies, work experience & education details…
+              </p>
             </div>
           </div>
           <div className="mt-8 space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between rounded-xl border border-line/40 bg-ink/40 p-4">
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-xl border border-line/40 bg-ink/40 p-4"
+              >
                 <div className="space-y-2 flex-1">
                   <div className="h-4 w-1/3 animate-pulse rounded bg-line/60" />
                   <div className="h-3 w-2/3 animate-pulse rounded bg-line/40" />
@@ -111,7 +136,9 @@ export function ResumePage() {
 
   // VIEW 2: FULL-PAGE OUTPUT VIEW (When Resume is parsed)
   if (resume) {
-    const candidateName = resume.name || (resume.displayName ? resume.displayName.split("—")[0].trim() : "Parsed Candidate");
+    const candidateName =
+      resume.name ||
+      (resume.displayName ? resume.displayName.split("—")[0].trim() : "Parsed Candidate");
 
     return (
       <div className="mx-auto max-w-5xl space-y-8 py-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -121,7 +148,9 @@ export function ResumePage() {
             <h1 className="font-display text-2xl font-bold tracking-tight text-ink-text md:text-3xl">
               Resume Parsing Results
             </h1>
-            <p className="text-xs text-muted-text">Extracted candidate profile details, skills & experience signals</p>
+            <p className="text-xs text-muted-text">
+              Extracted candidate profile details, skills & experience signals
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -129,8 +158,18 @@ export function ResumePage() {
               onClick={handleReset}
               className="flex items-center gap-2 rounded-xl border border-line/60 bg-panel/60 px-4 py-2 text-xs font-semibold text-ink-text transition-all hover:bg-panel hover:border-brass/50 active:scale-95"
             >
-              <svg className="h-3.5 w-3.5 text-brass" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="h-3.5 w-3.5 text-brass"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               <span>Upload Another Resume</span>
             </button>
@@ -141,7 +180,12 @@ export function ResumePage() {
             >
               <span>Continue to Profile Builder →</span>
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
               </svg>
             </button>
           </div>
@@ -183,16 +227,28 @@ export function ResumePage() {
           {/* Analytics Metrics Bar */}
           <div className="mt-8 grid grid-cols-3 gap-4 border-t border-line/40 pt-6 text-center">
             <div className="rounded-2xl border border-line/40 bg-ink/50 p-4">
-              <div className="font-display text-3xl font-bold text-ink-text">{resume.skills.length}</div>
-              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">Skills Extracted</div>
+              <div className="font-display text-3xl font-bold text-ink-text">
+                {resume.skills.length}
+              </div>
+              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">
+                Skills Extracted
+              </div>
             </div>
             <div className="rounded-2xl border border-line/40 bg-ink/50 p-4">
-              <div className="font-display text-3xl font-bold text-brass">{highConfidenceCount}</div>
-              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">High Confidence</div>
+              <div className="font-display text-3xl font-bold text-brass">
+                {highConfidenceCount}
+              </div>
+              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">
+                High Confidence
+              </div>
             </div>
             <div className="rounded-2xl border border-line/40 bg-ink/50 p-4">
-              <div className="font-display text-3xl font-bold text-emerald-400">{categoriesPresent.length}</div>
-              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">Categories Covered</div>
+              <div className="font-display text-3xl font-bold text-emerald-400">
+                {categoriesPresent.length}
+              </div>
+              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">
+                Categories Covered
+              </div>
             </div>
           </div>
         </div>
@@ -220,12 +276,16 @@ export function ResumePage() {
           <div className="rounded-2xl border border-line/60 bg-panel/50 p-5 space-y-3">
             <div className="flex items-center gap-2 border-b border-line/40 pb-2">
               <span className="text-base">💼</span>
-              <h3 className="font-display text-base font-bold text-ink-text">Work Experience & Internships</h3>
+              <h3 className="font-display text-base font-bold text-ink-text">
+                Work Experience & Internships
+              </h3>
             </div>
             {resume.experience && resume.experience.length > 0 ? (
               <ul className="space-y-1.5 text-xs text-muted-text list-disc list-inside">
                 {resume.experience.map((exp, idx) => (
-                  <li key={idx} className="text-ink-text font-medium">{exp}</li>
+                  <li key={idx} className="text-ink-text font-medium">
+                    {exp}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -237,12 +297,17 @@ export function ResumePage() {
           <div className="rounded-2xl border border-line/60 bg-panel/50 p-5 space-y-3 md:col-span-2">
             <div className="flex items-center gap-2 border-b border-line/40 pb-2">
               <span className="text-base">🚀</span>
-              <h3 className="font-display text-base font-bold text-ink-text">Technical Projects & Accomplishments</h3>
+              <h3 className="font-display text-base font-bold text-ink-text">
+                Technical Projects & Accomplishments
+              </h3>
             </div>
             {resume.projects && resume.projects.length > 0 ? (
               <div className="grid gap-2.5 md:grid-cols-2">
                 {resume.projects.map((proj, idx) => (
-                  <div key={idx} className="rounded-xl border border-line/40 bg-ink/40 p-3 text-xs text-ink-text font-medium">
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-line/40 bg-ink/40 p-3 text-xs text-ink-text font-medium"
+                  >
                     • {proj}
                   </div>
                 ))}
@@ -257,10 +322,16 @@ export function ResumePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <div>
-              <h3 className="font-display text-xl font-bold text-ink-text">Extracted Skill Signals</h3>
-              <p className="text-xs text-muted-text">Categorized technical skills & resume evidence quotes</p>
+              <h3 className="font-display text-xl font-bold text-ink-text">
+                Extracted Skill Signals
+              </h3>
+              <p className="text-xs text-muted-text">
+                Categorized technical skills & resume evidence quotes
+              </p>
             </div>
-            <span className="mono text-xs font-medium text-brass">{resume.skills.length} skills identified</span>
+            <span className="mono text-xs font-medium text-brass">
+              {resume.skills.length} skills identified
+            </span>
           </div>
 
           {resume.skills.length === 0 ? (
@@ -283,7 +354,9 @@ export function ResumePage() {
                       <div className="space-y-2 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2.5">
                           {/* Category Code Pill */}
-                          <span className={`inline-flex items-center rounded-lg px-2.5 py-1 mono text-[11px] font-bold border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
+                          <span
+                            className={`inline-flex items-center rounded-lg px-2.5 py-1 mono text-[11px] font-bold border ${catColor.bg} ${catColor.text} ${catColor.border}`}
+                          >
                             {catLabel} · {s.category_code}
                           </span>
 
@@ -302,7 +375,9 @@ export function ResumePage() {
                       </div>
 
                       {/* Confidence Tag */}
-                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 mono text-[10px] font-semibold uppercase tracking-wider ${confStyle.bg} ${confStyle.text}`}>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 mono text-[10px] font-semibold uppercase tracking-wider ${confStyle.bg} ${confStyle.text}`}
+                      >
                         <span className={`h-1.5 w-1.5 rounded-full ${confStyle.dot}`} />
                         {s.confidence}
                       </span>
@@ -320,8 +395,18 @@ export function ResumePage() {
             onClick={handleReset}
             className="flex items-center gap-2 rounded-xl border border-line/60 bg-panel/60 px-5 py-3 text-sm font-semibold text-ink-text transition-all hover:bg-panel hover:border-brass/50 active:scale-95"
           >
-            <svg className="h-4 w-4 text-brass" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg
+              className="h-4 w-4 text-brass"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             <span>Upload Another Resume</span>
           </button>
@@ -331,8 +416,18 @@ export function ResumePage() {
             className="group flex items-center gap-2.5 rounded-xl bg-brass px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:brightness-110 active:scale-95"
           >
             <span>Continue to Profile Builder</span>
-            <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            <svg
+              className="h-4 w-4 transition-transform group-hover:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
             </svg>
           </button>
         </div>
@@ -349,7 +444,10 @@ export function ResumePage() {
             Upload Candidate Resume
           </h1>
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-muted-text">
-            Upload any resume as a <strong className="text-ink-text font-medium">PDF or DOCX</strong> file to extract technical competencies, projects, work experience, and automatically populate your candidate profile.
+            Upload any resume as a{" "}
+            <strong className="text-ink-text font-medium">PDF or DOCX</strong> file to extract
+            technical competencies, projects, work experience, and automatically populate your
+            candidate profile.
           </p>
         </header>
 
@@ -367,8 +465,18 @@ export function ResumePage() {
         {error && (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-400 backdrop-blur-sm shadow-md">
             <div className="flex items-center gap-2 font-semibold">
-              <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="h-5 w-5 shrink-0 text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <span>Parsing Failed</span>
             </div>

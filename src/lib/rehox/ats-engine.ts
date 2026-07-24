@@ -14,26 +14,56 @@ export interface ATSDiagnosticResult {
 }
 
 const ACTION_VERBS = new Set([
-  "architected", "built", "spearheaded", "engineered", "optimized",
-  "developed", "scaled", "deployed", "designed", "implemented",
-  "reduced", "increased", "accelerated", "migrated", "automated",
-  "integrated", "pioneered", "refactored", "orchestrated", "lead"
+  "architected",
+  "built",
+  "spearheaded",
+  "engineered",
+  "optimized",
+  "developed",
+  "scaled",
+  "deployed",
+  "designed",
+  "implemented",
+  "reduced",
+  "increased",
+  "accelerated",
+  "migrated",
+  "automated",
+  "integrated",
+  "pioneered",
+  "refactored",
+  "orchestrated",
+  "lead",
 ]);
 
-export function evaluateAtsResume(resume: ATSResume, jd?: ParsedSource | null): ATSDiagnosticResult {
+export function evaluateAtsResume(
+  resume: ATSResume,
+  jd?: ParsedSource | null,
+): ATSDiagnosticResult {
   const jdKeywords = new Set(
     jd?.skills.map((s) => s.skill_name.toLowerCase()) ?? [
-      "typescript", "react", "node.js", "python", "system design",
-      "aws", "docker", "sql", "postgresql", "rest api", "ci/cd"
-    ]
+      "typescript",
+      "react",
+      "node.js",
+      "python",
+      "system design",
+      "aws",
+      "docker",
+      "sql",
+      "postgresql",
+      "rest api",
+      "ci/cd",
+    ],
   );
 
   const resumeText = [
     resume.summary,
     ...resume.skills,
     ...resume.experience.flatMap((e) => [e.company, e.role, ...e.bullets]),
-    ...resume.education.map((ed) => `${ed.institution} ${ed.degree}`)
-  ].join(" ").toLowerCase();
+    ...resume.education.map((ed) => `${ed.institution} ${ed.degree}`),
+  ]
+    .join(" ")
+    .toLowerCase();
 
   const matched: string[] = [];
   const missing: string[] = [];
@@ -73,7 +103,11 @@ export function evaluateAtsResume(resume: ATSResume, jd?: ParsedSource | null): 
   let metricCount = 0;
 
   allBullets.forEach((bullet) => {
-    const firstWord = bullet.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g, "");
+    const firstWord = bullet
+      .trim()
+      .split(/\s+/)[0]
+      ?.toLowerCase()
+      .replace(/[^a-z]/g, "");
     if (firstWord && ACTION_VERBS.has(firstWord)) actionVerbCount++;
     if (/\d+%|\$\d+|\d+\+|\b\d+\b/.test(bullet)) metricCount++;
   });
@@ -86,14 +120,18 @@ export function evaluateAtsResume(resume: ATSResume, jd?: ParsedSource | null): 
 
   const impact_feedback: string[] = [];
   if (actionRatio < 0.6) {
-    impact_feedback.push("Start experience bullets with strong past-tense action verbs (e.g. Architected, Engineered, Optimized).");
+    impact_feedback.push(
+      "Start experience bullets with strong past-tense action verbs (e.g. Architected, Engineered, Optimized).",
+    );
   }
   if (metricRatio < 0.4) {
-    impact_feedback.push("Quantify results with metric numbers (e.g., 'reduced latency by 45%', 'handled 10k RPS').");
+    impact_feedback.push(
+      "Quantify results with metric numbers (e.g., 'reduced latency by 45%', 'handled 10k RPS').",
+    );
   }
 
   const overall_score = Math.round(
-    keyword_match_score * 0.45 + formatting_score * 0.3 + impact_action_score * 0.25
+    keyword_match_score * 0.45 + formatting_score * 0.3 + impact_action_score * 0.25,
   );
 
   let verdict: ATSDiagnosticResult["verdict"] = "Needs Optimization";
@@ -114,8 +152,10 @@ export function evaluateAtsResume(resume: ATSResume, jd?: ParsedSource | null): 
 }
 
 export async function enhanceBulletWithAi(bullet: string, role: string): Promise<string> {
-  const apiKey = (typeof process !== "undefined" && process?.env?.GROQ_API_KEY) ||
-                 (typeof import.meta !== "undefined" && import.meta?.env?.GROQ_API_KEY) || "";
+  const apiKey =
+    (typeof process !== "undefined" && process?.env?.GROQ_API_KEY) ||
+    (typeof import.meta !== "undefined" && import.meta?.env?.GROQ_API_KEY) ||
+    "";
 
   if (!apiKey) {
     return `Optimized: ${bullet.trim()} resulting in 35% performance gain and 99.9% uptime.`;

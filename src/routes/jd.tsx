@@ -10,9 +10,17 @@ export const Route = createFileRoute("/jd")({
   head: () => ({
     meta: [
       { title: "JD Analytics · RehoX" },
-      { name: "description", content: "Upload a job description document (PDF or DOCX) to extract required skills and competencies." },
+      {
+        name: "description",
+        content:
+          "Upload a job description document (PDF or DOCX) to extract required skills and competencies.",
+      },
       { property: "og:title", content: "JD Analytics · RehoX" },
-      { property: "og:description", content: "Extract structured skill lists, evidence, and confidence ratings from any job description." },
+      {
+        property: "og:description",
+        content:
+          "Extract structured skill lists, evidence, and confidence ratings from any job description.",
+      },
     ],
   }),
   component: JDPage,
@@ -35,9 +43,21 @@ const categoryColors: Record<CategoryCode, { bg: string; text: string; border: s
 };
 
 const confidenceStyles: Record<Skill["confidence"], { bg: string; text: string; dot: string }> = {
-  high: { bg: "bg-emerald-500/10 border border-emerald-500/30", text: "text-emerald-400", dot: "bg-emerald-400" },
-  medium: { bg: "bg-amber-500/10 border border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
-  low: { bg: "bg-slate-500/10 border border-slate-500/30", text: "text-slate-400", dot: "bg-slate-400" },
+  high: {
+    bg: "bg-emerald-500/10 border border-emerald-500/30",
+    text: "text-emerald-400",
+    dot: "bg-emerald-400",
+  },
+  medium: {
+    bg: "bg-amber-500/10 border border-amber-500/30",
+    text: "text-amber-400",
+    dot: "bg-amber-400",
+  },
+  low: {
+    bg: "bg-slate-500/10 border border-slate-500/30",
+    text: "text-slate-400",
+    dot: "bg-slate-400",
+  },
 };
 
 export function JDPage() {
@@ -78,12 +98,17 @@ export function JDPage() {
             <div className="h-7 w-7 animate-spin rounded-full border-3 border-brass border-t-transparent" />
             <div>
               <h3 className="font-display text-xl font-bold">Analyzing Job Description</h3>
-              <p className="text-sm text-muted-text">Parsing document, extracting target role & mapping skill signals…</p>
+              <p className="text-sm text-muted-text">
+                Parsing document, extracting target role & mapping skill signals…
+              </p>
             </div>
           </div>
           <div className="mt-8 space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between rounded-xl border border-line/40 bg-ink/40 p-4">
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-xl border border-line/40 bg-ink/40 p-4"
+              >
                 <div className="space-y-2 flex-1">
                   <div className="h-4 w-1/3 animate-pulse rounded bg-line/60" />
                   <div className="h-3 w-2/3 animate-pulse rounded bg-line/40" />
@@ -107,7 +132,9 @@ export function JDPage() {
             <h1 className="font-display text-2xl font-bold tracking-tight text-ink-text md:text-3xl">
               JD Analytics Results
             </h1>
-            <p className="text-xs text-muted-text">Structured skill signal breakdown and category mappings</p>
+            <p className="text-xs text-muted-text">
+              Structured skill signal breakdown and category mappings
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -115,8 +142,18 @@ export function JDPage() {
               onClick={handleReset}
               className="flex items-center gap-2 rounded-xl border border-line/60 bg-panel/60 px-4 py-2 text-xs font-semibold text-ink-text transition-all hover:bg-panel hover:border-brass/50 active:scale-95"
             >
-              <svg className="h-3.5 w-3.5 text-brass" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="h-3.5 w-3.5 text-brass"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               <span>Upload Another JD</span>
             </button>
@@ -127,7 +164,12 @@ export function JDPage() {
             >
               <span>Continue to Resume Parsing</span>
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
               </svg>
             </button>
           </div>
@@ -159,16 +201,28 @@ export function JDPage() {
           {/* Key Metrics Bar */}
           <div className="mt-8 grid grid-cols-3 gap-4 border-t border-line/40 pt-6 text-center">
             <div className="rounded-2xl border border-line/40 bg-ink/50 p-4">
-              <div className="font-display text-3xl font-bold text-ink-text">{jd.skills.length}</div>
-              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">Skills Extracted</div>
+              <div className="font-display text-3xl font-bold text-ink-text">
+                {jd.skills.length}
+              </div>
+              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">
+                Skills Extracted
+              </div>
             </div>
             <div className="rounded-2xl border border-line/40 bg-ink/50 p-4">
-              <div className="font-display text-3xl font-bold text-brass">{highConfidenceCount}</div>
-              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">Must-Have (High)</div>
+              <div className="font-display text-3xl font-bold text-brass">
+                {highConfidenceCount}
+              </div>
+              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">
+                Must-Have (High)
+              </div>
             </div>
             <div className="rounded-2xl border border-line/40 bg-ink/50 p-4">
-              <div className="font-display text-3xl font-bold text-emerald-400">{categoriesPresent.length}</div>
-              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">Categories Covered</div>
+              <div className="font-display text-3xl font-bold text-emerald-400">
+                {categoriesPresent.length}
+              </div>
+              <div className="mono text-[11px] uppercase tracking-wider text-muted-text mt-1">
+                Categories Covered
+              </div>
             </div>
           </div>
         </div>
@@ -177,10 +231,16 @@ export function JDPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <div>
-              <h3 className="font-display text-xl font-bold text-ink-text">Skill Signal Breakdown</h3>
-              <p className="text-xs text-muted-text">Extracted skill requirements categorized by competency area</p>
+              <h3 className="font-display text-xl font-bold text-ink-text">
+                Skill Signal Breakdown
+              </h3>
+              <p className="text-xs text-muted-text">
+                Extracted skill requirements categorized by competency area
+              </p>
             </div>
-            <span className="mono text-xs font-medium text-brass">{jd.skills.length} requirements identified</span>
+            <span className="mono text-xs font-medium text-brass">
+              {jd.skills.length} requirements identified
+            </span>
           </div>
 
           {jd.skills.length === 0 ? (
@@ -203,7 +263,9 @@ export function JDPage() {
                       <div className="space-y-2 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2.5">
                           {/* Category Code Pill */}
-                          <span className={`inline-flex items-center rounded-lg px-2.5 py-1 mono text-[11px] font-bold border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
+                          <span
+                            className={`inline-flex items-center rounded-lg px-2.5 py-1 mono text-[11px] font-bold border ${catColor.bg} ${catColor.text} ${catColor.border}`}
+                          >
                             {catLabel} · {s.category_code}
                           </span>
 
@@ -222,7 +284,9 @@ export function JDPage() {
                       </div>
 
                       {/* Confidence Tag */}
-                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 mono text-[10px] font-semibold uppercase tracking-wider ${confStyle.bg} ${confStyle.text}`}>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 mono text-[10px] font-semibold uppercase tracking-wider ${confStyle.bg} ${confStyle.text}`}
+                      >
                         <span className={`h-1.5 w-1.5 rounded-full ${confStyle.dot}`} />
                         {s.confidence}
                       </span>
@@ -240,8 +304,18 @@ export function JDPage() {
             onClick={handleReset}
             className="flex items-center gap-2 rounded-xl border border-line/60 bg-panel/60 px-5 py-3 text-sm font-semibold text-ink-text transition-all hover:bg-panel hover:border-brass/50 active:scale-95"
           >
-            <svg className="h-4 w-4 text-brass" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg
+              className="h-4 w-4 text-brass"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             <span>Upload Another JD</span>
           </button>
@@ -251,8 +325,18 @@ export function JDPage() {
             className="group flex items-center gap-2.5 rounded-xl bg-brass px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:brightness-110 active:scale-95"
           >
             <span>Continue to Resume Parsing</span>
-            <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            <svg
+              className="h-4 w-4 transition-transform group-hover:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
             </svg>
           </button>
         </div>
@@ -269,7 +353,9 @@ export function JDPage() {
             Upload Job Description
           </h1>
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-muted-text">
-            Upload any job description as a <strong className="text-ink-text font-medium">PDF or DOCX</strong> file to analyze key responsibilities, extract technical requirements, and view mapped skill signals.
+            Upload any job description as a{" "}
+            <strong className="text-ink-text font-medium">PDF or DOCX</strong> file to analyze key
+            responsibilities, extract technical requirements, and view mapped skill signals.
           </p>
         </header>
 
@@ -287,8 +373,18 @@ export function JDPage() {
         {error && (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-400 backdrop-blur-sm shadow-md">
             <div className="flex items-center gap-2 font-semibold">
-              <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="h-5 w-5 shrink-0 text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <span>Extraction Failed</span>
             </div>
@@ -308,9 +404,13 @@ export function EmptyDial({ caption }: { caption: string }) {
         <circle cx="110" cy="110" r="22" fill="none" stroke="var(--line)" strokeWidth="1.5" />
         {Array.from({ length: 12 }).map((_, i) => {
           const a = -Math.PI / 2 + i * ((Math.PI * 2) / 12);
-          const x1 = 110 + Math.cos(a) * 22, y1 = 110 + Math.sin(a) * 22;
-          const x2 = 110 + Math.cos(a) * 92, y2 = 110 + Math.sin(a) * 92;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--line)" strokeWidth="1.5" />;
+          const x1 = 110 + Math.cos(a) * 22,
+            y1 = 110 + Math.sin(a) * 22;
+          const x2 = 110 + Math.cos(a) * 92,
+            y2 = 110 + Math.sin(a) * 92;
+          return (
+            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--line)" strokeWidth="1.5" />
+          );
         })}
       </svg>
       <p className="mt-6 max-w-xs text-sm text-muted-text leading-relaxed">{caption}</p>

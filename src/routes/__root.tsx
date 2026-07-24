@@ -75,9 +75,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "RehoX — Find out how ready you actually are" },
-      { name: "description", content: "RehoX uses the RADIX 12-skillset framework and real hiring data to tell you, precisely, how ready you are for a specific job." },
+      {
+        name: "description",
+        content:
+          "RehoX uses the RADIX 12-skillset framework and real hiring data to tell you, precisely, how ready you are for a specific job.",
+      },
       { property: "og:title", content: "RehoX — Find out how ready you actually are" },
-      { property: "og:description", content: "Upload a JD, upload your resume, and see the exact gaps between what a role wants and what you show." },
+      {
+        property: "og:description",
+        content:
+          "Upload a JD, upload your resume, and see the exact gaps between what a role wants and what you show.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -90,7 +98,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "alternate icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,

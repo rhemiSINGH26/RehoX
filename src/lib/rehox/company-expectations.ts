@@ -1,10 +1,6 @@
 import { z } from "zod";
 import rawCompanyExpectations from "./company-expectations.json?raw";
-import {
-  CATEGORY_ORDER,
-  type CompetencyLevels,
-  type TalentCheckCategoryCode,
-} from "./types";
+import { CATEGORY_ORDER, type CompetencyLevels, type TalentCheckCategoryCode } from "./types";
 
 const LevelSchema = z.number().int().min(1).max(10);
 const WeightSchema = z.number().min(0.1).max(5);
@@ -62,15 +58,20 @@ function parseCompanyExpectationEntry(
     }
   }
 
-  const parsedMandatorys = MandatoryCompetenciesSchema.safeParse(entry.mandatory_competencies ?? []);
+  const parsedMandatorys = MandatoryCompetenciesSchema.safeParse(
+    entry.mandatory_competencies ?? [],
+  );
   if (!parsedMandatorys.success) {
-    throw new Error(`Mandatory competencies for ${company} must be a valid list of RADIX categories.`);
+    throw new Error(
+      `Mandatory competencies for ${company} must be a valid list of RADIX categories.`,
+    );
   }
 
   return {
     required_levels,
     weights,
-    mandatory_competencies: parsedMandatorys.data.length > 0 ? parsedMandatorys.data : ["COD", "DSA"],
+    mandatory_competencies:
+      parsedMandatorys.data.length > 0 ? parsedMandatorys.data : ["COD", "DSA"],
   };
 }
 
@@ -88,7 +89,10 @@ function loadCompanyExpectations(): Record<string, CompanyExpectation> {
   }
 
   return Object.fromEntries(
-    Object.entries(parsed.data).map(([company, entry]) => [company, parseCompanyExpectationEntry(company, entry)]),
+    Object.entries(parsed.data).map(([company, entry]) => [
+      company,
+      parseCompanyExpectationEntry(company, entry),
+    ]),
   );
 }
 
@@ -97,26 +101,53 @@ export const COMPANIES = Object.keys(COMPANY_EXPECTATIONS);
 export type Company = string;
 
 export function resolveCompanyName(company: string): string | null {
+  if (!company) return null;
   const normalizedCompany = company.trim().toLowerCase();
   return COMPANIES.find((candidate) => candidate.toLowerCase() === normalizedCompany) ?? null;
 }
 
-export function getCompanyExpectation(company: string): CompanyExpectation | null {
+const DEFAULT_DYNAMIC_EXPECTATION: CompanyExpectation = {
+  required_levels: {
+    COD: 8,
+    DSA: 8,
+    OOD: 7,
+    APTI: 7,
+    COMM: 7,
+    AI: 6,
+    CLOUD: 7,
+    SQL: 7,
+    SWE: 8,
+    SYSD: 8,
+    NETW: 6,
+    OS: 7,
+  },
+  weights: {
+    COD: 1.2,
+    DSA: 1.2,
+    SYSD: 1.2,
+    SWE: 1.1,
+  },
+  mandatory_competencies: ["COD", "DSA"],
+};
+
+export function getCompanyExpectation(company: string): CompanyExpectation {
   const resolvedCompany = resolveCompanyName(company);
-  return resolvedCompany ? COMPANY_EXPECTATIONS[resolvedCompany] : null;
+  if (resolvedCompany && COMPANY_EXPECTATIONS[resolvedCompany]) {
+    return COMPANY_EXPECTATIONS[resolvedCompany];
+  }
+  return DEFAULT_DYNAMIC_EXPECTATION;
 }
 
-export function getCompanyRequiredLevels(company: string): CompetencyLevels | null {
-  const expectation = getCompanyExpectation(company);
-  return expectation ? expectation.required_levels : null;
+export function getCompanyRequiredLevels(company: string): CompetencyLevels {
+  return getCompanyExpectation(company).required_levels;
 }
 
-export function getCompanyWeights(company: string): Partial<Record<TalentCheckCategoryCode, number>> {
-  const expectation = getCompanyExpectation(company);
-  return expectation?.weights ?? {};
+export function getCompanyWeights(
+  company: string,
+): Partial<Record<TalentCheckCategoryCode, number>> {
+  return getCompanyExpectation(company).weights;
 }
 
 export function getMandatoryCompetencies(company: string): TalentCheckCategoryCode[] {
-  const expectation = getCompanyExpectation(company);
-  return expectation?.mandatory_competencies ?? ["COD", "DSA"];
+  return getCompanyExpectation(company).mandatory_competencies;
 }

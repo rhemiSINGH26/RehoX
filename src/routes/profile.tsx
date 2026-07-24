@@ -2,8 +2,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DropZone } from "@/components/rehox/DropZone";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
-import { CATEGORY_ORDER, CATEGORY_LABEL, type CategoryCode, type Profile, type Skill } from "@/lib/rehox/types";
-import { buildCandidateProfile, normalizeSkill, cleanEvidence, mergeDuplicateSkills } from "@/lib/rehox/profileBuilder";
+import {
+  CATEGORY_ORDER,
+  CATEGORY_LABEL,
+  type CategoryCode,
+  type Profile,
+  type Skill,
+} from "@/lib/rehox/types";
+import {
+  buildCandidateProfile,
+  normalizeSkill,
+  cleanEvidence,
+  mergeDuplicateSkills,
+} from "@/lib/rehox/profileBuilder";
 import { saveProfileToSupabase } from "@/lib/rehox/supabase";
 import { fileToText } from "@/lib/rehox/file-to-text";
 import { extractResumeSkills } from "@/lib/rehox/resume-extract";
@@ -12,9 +23,15 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "Profile Builder · RehoX" },
-      { name: "description", content: "Build candidate profile directly from resume parsing output." },
+      {
+        name: "description",
+        content: "Build candidate profile directly from resume parsing output.",
+      },
       { property: "og:title", content: "Profile Builder · RehoX" },
-      { property: "og:description", content: "Candidate profile builder powered by resume parsing data." },
+      {
+        property: "og:description",
+        content: "Candidate profile builder powered by resume parsing data.",
+      },
     ],
   }),
   component: ProfilePage,
@@ -40,7 +57,9 @@ export function ProfilePage() {
   const savedAt = useRehox((s) => s.profileSavedAt);
   const nav = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"basics" | "skills" | "experience" | "certs">("basics");
+  const [activeTab, setActiveTab] = useState<"basics" | "skills" | "experience" | "certs">(
+    "basics",
+  );
   const [supabaseStatus, setSupabaseStatus] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -137,11 +156,13 @@ export function ProfilePage() {
     const normalized = buildCandidateProfile(profile);
     rehoxStore.set({ profile: normalized, profileSavedAt: Date.now() });
     try {
-      saveProfileToSupabase(normalized).then((res) => {
-        if (res.success) setSupabaseStatus("Supabase Synced");
-      }).catch((err) => {
-        console.warn("Supabase sync warning:", err);
-      });
+      saveProfileToSupabase(normalized)
+        .then((res) => {
+          if (res.success) setSupabaseStatus("Supabase Synced");
+        })
+        .catch((err) => {
+          console.warn("Supabase sync warning:", err);
+        });
     } catch {
       // Ignore background sync errors to guarantee smooth UI navigation
     }
@@ -153,12 +174,16 @@ export function ProfilePage() {
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-6">
         <div className="text-center space-y-3">
-          <div className="mono text-xs uppercase tracking-widest text-brass font-bold">Profile Builder</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-bold">
+            Profile Builder
+          </div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-text md:text-4xl">
             Build Candidate Profile from Resume
           </h1>
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-muted-text">
-            Upload your resume document (<strong className="text-ink-text font-medium">PDF or DOCX</strong>) to extract skills, education, work experience, and automatically populate your candidate profile.
+            Upload your resume document (
+            <strong className="text-ink-text font-medium">PDF or DOCX</strong>) to extract skills,
+            education, work experience, and automatically populate your candidate profile.
           </p>
         </div>
 
@@ -174,8 +199,18 @@ export function ProfilePage() {
         {uploadError && (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-400 backdrop-blur-sm shadow-md">
             <div className="flex items-center gap-2 font-semibold">
-              <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="h-5 w-5 shrink-0 text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <span>Resume Extraction Failed</span>
             </div>
@@ -194,7 +229,9 @@ export function ProfilePage() {
             <div className="h-7 w-7 animate-spin rounded-full border-3 border-brass border-t-transparent" />
             <div>
               <h3 className="font-display text-xl font-bold">Extracting Profile Details</h3>
-              <p className="text-sm text-muted-text">Reading resume document, populating skills, education & experience…</p>
+              <p className="text-sm text-muted-text">
+                Reading resume document, populating skills, education & experience…
+              </p>
             </div>
           </div>
         </div>
@@ -207,10 +244,13 @@ export function ProfilePage() {
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Candidate Profile Builder</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">
+            Candidate Profile Builder
+          </div>
           <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Candidate Profile</h1>
           <p className="mt-1 text-sm text-muted-text">
-            Extracted directly from resume parsing output. Review, edit, or add remaining fields below.
+            Extracted directly from resume parsing output. Review, edit, or add remaining fields
+            below.
           </p>
         </div>
 
@@ -237,7 +277,10 @@ export function ProfilePage() {
         <div className="flex items-center gap-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-ink-text font-medium">
-            Active Resume Source: <code className="mono text-brass font-bold">{resumeSource?.source_file || profile.cv_file || "Uploaded Resume"}</code>
+            Active Resume Source:{" "}
+            <code className="mono text-brass font-bold">
+              {resumeSource?.source_file || profile.cv_file || "Uploaded Resume"}
+            </code>
           </span>
         </div>
 
@@ -283,7 +326,10 @@ export function ProfilePage() {
       {/* Form Content Area */}
       <div className="space-y-6">
         {activeTab === "basics" && (
-          <Section title="Basic Candidate Information" hint="Extracted from resume parsing output. Edit fields manually if needed.">
+          <Section
+            title="Basic Candidate Information"
+            hint="Extracted from resume parsing output. Edit fields manually if needed."
+          >
             <div className="grid gap-4 md:grid-cols-2">
               <Field
                 label="Full Name"
@@ -299,7 +345,9 @@ export function ProfilePage() {
                   placeholder="candidate@example.com"
                 />
                 {!isEmailValid && (
-                  <div className="mt-1 text-[10px] text-alert-coral mono">Please enter a valid email address</div>
+                  <div className="mt-1 text-[10px] text-alert-coral mono">
+                    Please enter a valid email address
+                  </div>
                 )}
               </div>
               <Field
@@ -316,7 +364,9 @@ export function ProfilePage() {
               />
 
               <div className="md:col-span-2 space-y-1.5">
-                <div className="mono text-[10px] uppercase tracking-widest text-muted-text">CV Source Document Name</div>
+                <div className="mono text-[10px] uppercase tracking-widest text-muted-text">
+                  CV Source Document Name
+                </div>
                 <input
                   type="text"
                   value={profile.cv_file}
@@ -330,7 +380,10 @@ export function ProfilePage() {
         )}
 
         {activeTab === "skills" && (
-          <Section title="Extracted & Normalized Candidate Skills" hint="Categorized technical competencies. You can edit evidence quotes or add new skills.">
+          <Section
+            title="Extracted & Normalized Candidate Skills"
+            hint="Categorized technical competencies. You can edit evidence quotes or add new skills."
+          >
             <div className="space-y-2.5">
               {profile.skills.map((s, i) => (
                 <div
@@ -346,7 +399,9 @@ export function ProfilePage() {
                   </div>
 
                   <div className="flex-1 text-xs text-muted-text min-w-[200px] border-l border-line/40 pl-3">
-                    <span className="mono text-[10px] uppercase text-muted-text/70 mr-1">Evidence:</span>
+                    <span className="mono text-[10px] uppercase text-muted-text/70 mr-1">
+                      Evidence:
+                    </span>
                     <input
                       type="text"
                       value={s.evidence}
@@ -361,8 +416,8 @@ export function ProfilePage() {
                       s.confidence === "high"
                         ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                         : s.confidence === "medium"
-                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-                        : "bg-slate-500/10 text-slate-400 border border-slate-500/30",
+                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                          : "bg-slate-500/10 text-slate-400 border border-slate-500/30",
                     ].join(" ")}
                   >
                     {s.confidence}
@@ -388,7 +443,10 @@ export function ProfilePage() {
         )}
 
         {activeTab === "experience" && (
-          <Section title="Work Experience, Internships & Hackathons" hint="Extracted from resume. Add entries separated by commas.">
+          <Section
+            title="Work Experience, Internships & Hackathons"
+            hint="Extracted from resume. Add entries separated by commas."
+          >
             <div className="space-y-4">
               <TagEditor
                 label="Work Experience & Internships"
@@ -409,7 +467,10 @@ export function ProfilePage() {
         )}
 
         {activeTab === "certs" && (
-          <Section title="Certifications & Preferred Job Roles" hint="Target positions and verified certificates.">
+          <Section
+            title="Certifications & Preferred Job Roles"
+            hint="Target positions and verified certificates."
+          >
             <div className="space-y-4">
               <TagEditor
                 label="Preferred / Target Roles"
@@ -443,7 +504,15 @@ export function ProfilePage() {
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-2xl border border-line/60 bg-panel/50 p-6 space-y-4 shadow-sm">
       <div>
@@ -470,7 +539,9 @@ function Field({
 }) {
   return (
     <div className={span === 2 ? "md:col-span-2 space-y-1.5" : "space-y-1.5"}>
-      <label className="mono text-[10px] uppercase tracking-widest text-muted-text font-semibold">{label}</label>
+      <label className="mono text-[10px] uppercase tracking-widest text-muted-text font-semibold">
+        {label}
+      </label>
       <input
         type="text"
         value={value}
@@ -510,7 +581,9 @@ function TagEditor({
 
   return (
     <div className="space-y-2">
-      <div className="mono text-[10px] uppercase tracking-widest text-muted-text font-semibold">{label}</div>
+      <div className="mono text-[10px] uppercase tracking-widest text-muted-text font-semibold">
+        {label}
+      </div>
       {hint && <div className="text-xs text-muted-text/80">{hint}</div>}
 
       <div className="flex flex-wrap gap-2">
@@ -569,7 +642,9 @@ function AddSkillForm({ onAdd }: { onAdd: (sk: Skill) => void }) {
         />
       </div>
       <div>
-        <div className="mono text-[10px] uppercase tracking-widest text-muted-text">Category Code</div>
+        <div className="mono text-[10px] uppercase tracking-widest text-muted-text">
+          Category Code
+        </div>
         <select
           value={code}
           onChange={(e) => setCode(e.target.value as CategoryCode)}
@@ -596,7 +671,9 @@ function AddSkillForm({ onAdd }: { onAdd: (sk: Skill) => void }) {
         </select>
       </div>
       <div className="flex-1 min-w-[180px]">
-        <div className="mono text-[10px] uppercase tracking-widest text-muted-text">Short Evidence</div>
+        <div className="mono text-[10px] uppercase tracking-widest text-muted-text">
+          Short Evidence
+        </div>
         <input
           value={evidence}
           onChange={(e) => setEvidence(e.target.value)}

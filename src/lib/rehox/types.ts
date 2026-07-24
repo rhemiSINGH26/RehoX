@@ -16,10 +16,7 @@ export type CategoryCode =
 export type TalentCheckCategoryCode = Exclude<CategoryCode, "OTHER">;
 export type GapSeverity = "met" | "minor" | "moderate" | "critical";
 export type ReadinessBand =
-  | "Interview Ready"
-  | "Nearly Ready"
-  | "Developing"
-  | "Significant Skill Gaps";
+  "Interview Ready" | "Nearly Ready" | "Developing" | "Significant Skill Gaps";
 
 export type CompetencyLevels = Record<TalentCheckCategoryCode, number>;
 

@@ -24,7 +24,15 @@ export function SkillRow({ skill }: { skill: Skill }) {
   );
 }
 
-export function PaperCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+export function PaperCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-line bg-paper text-[color:oklch(0.19_0.03_260)] shadow-sm">
       <div className="border-b border-black/10 px-5 py-3">
@@ -47,12 +55,16 @@ export function PaperSkillRow({ skill }: { skill: Skill }) {
         <div className="mt-0.5 text-xs italic text-black/60">{skill.evidence}</div>
       </div>
       <span className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-widest text-black/60 mono">
-        <span className={[
-          "inline-block h-1.5 w-1.5 rounded-full",
-          skill.confidence === "high" ? "bg-[color:oklch(0.55_0.10_190)]"
-          : skill.confidence === "medium" ? "bg-[color:oklch(0.55_0.13_65)]"
-          : "bg-black/40",
-        ].join(" ")} />
+        <span
+          className={[
+            "inline-block h-1.5 w-1.5 rounded-full",
+            skill.confidence === "high"
+              ? "bg-[color:oklch(0.55_0.10_190)]"
+              : skill.confidence === "medium"
+                ? "bg-[color:oklch(0.55_0.13_65)]"
+                : "bg-black/40",
+          ].join(" ")}
+        />
         {skill.confidence}
       </span>
     </div>

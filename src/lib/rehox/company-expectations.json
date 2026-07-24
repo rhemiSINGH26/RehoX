@@ -61,6 +61,192 @@
     },
     "mandatory_competencies": ["COD", "DSA"]
   },
+  "Amazon": {
+    "required_levels": {
+      "COD": 9,
+      "DSA": 9,
+      "OOD": 9,
+      "APTI": 8,
+      "COMM": 9,
+      "AI": 6,
+      "CLOUD": 9,
+      "SQL": 7,
+      "SWE": 8,
+      "SYSD": 9,
+      "NETW": 7,
+      "OS": 7
+    },
+    "weights": {
+      "COD": 1.3,
+      "DSA": 1.3,
+      "OOD": 1.3,
+      "APTI": 1.0,
+      "COMM": 1.3,
+      "AI": 1.0,
+      "CLOUD": 1.3,
+      "SQL": 1.0,
+      "SWE": 1.1,
+      "SYSD": 1.3,
+      "NETW": 0.9,
+      "OS": 1.0
+    },
+    "mandatory_competencies": ["COD", "DSA", "COMM"]
+  },
+  "Meta": {
+    "required_levels": {
+      "COD": 10,
+      "DSA": 10,
+      "OOD": 7,
+      "APTI": 8,
+      "COMM": 7,
+      "AI": 8,
+      "CLOUD": 7,
+      "SQL": 6,
+      "SWE": 8,
+      "SYSD": 9,
+      "NETW": 7,
+      "OS": 7
+    },
+    "weights": {
+      "COD": 1.5,
+      "DSA": 1.5,
+      "OOD": 1.0,
+      "APTI": 1.0,
+      "COMM": 1.0,
+      "AI": 1.2,
+      "CLOUD": 1.0,
+      "SQL": 0.9,
+      "SWE": 1.1,
+      "SYSD": 1.3,
+      "NETW": 1.0,
+      "OS": 1.0
+    },
+    "mandatory_competencies": ["COD", "DSA"]
+  },
+  "Apple": {
+    "required_levels": {
+      "COD": 9,
+      "DSA": 8,
+      "OOD": 9,
+      "APTI": 7,
+      "COMM": 8,
+      "AI": 7,
+      "CLOUD": 7,
+      "SQL": 6,
+      "SWE": 9,
+      "SYSD": 8,
+      "NETW": 8,
+      "OS": 9
+    },
+    "weights": {
+      "COD": 1.3,
+      "DSA": 1.2,
+      "OOD": 1.3,
+      "APTI": 0.9,
+      "COMM": 1.1,
+      "AI": 1.1,
+      "CLOUD": 1.0,
+      "SQL": 0.9,
+      "SWE": 1.3,
+      "SYSD": 1.2,
+      "NETW": 1.1,
+      "OS": 1.3
+    },
+    "mandatory_competencies": ["COD", "SWE", "OS"]
+  },
+  "OpenAI": {
+    "required_levels": {
+      "COD": 10,
+      "DSA": 9,
+      "OOD": 8,
+      "APTI": 9,
+      "COMM": 8,
+      "AI": 10,
+      "CLOUD": 8,
+      "SQL": 7,
+      "SWE": 9,
+      "SYSD": 10,
+      "NETW": 7,
+      "OS": 8
+    },
+    "weights": {
+      "COD": 1.4,
+      "DSA": 1.3,
+      "OOD": 1.1,
+      "APTI": 1.2,
+      "COMM": 1.1,
+      "AI": 1.6,
+      "CLOUD": 1.2,
+      "SQL": 1.0,
+      "SWE": 1.3,
+      "SYSD": 1.4,
+      "NETW": 1.0,
+      "OS": 1.1
+    },
+    "mandatory_competencies": ["COD", "AI", "SYSD"]
+  },
+  "Uber": {
+    "required_levels": {
+      "COD": 9,
+      "DSA": 9,
+      "OOD": 8,
+      "APTI": 8,
+      "COMM": 8,
+      "AI": 6,
+      "CLOUD": 8,
+      "SQL": 7,
+      "SWE": 8,
+      "SYSD": 10,
+      "NETW": 8,
+      "OS": 8
+    },
+    "weights": {
+      "COD": 1.3,
+      "DSA": 1.3,
+      "OOD": 1.1,
+      "APTI": 1.0,
+      "COMM": 1.1,
+      "AI": 1.0,
+      "CLOUD": 1.2,
+      "SQL": 1.0,
+      "SWE": 1.1,
+      "SYSD": 1.5,
+      "NETW": 1.1,
+      "OS": 1.1
+    },
+    "mandatory_competencies": ["COD", "SYSD"]
+  },
+  "Goldman Sachs": {
+    "required_levels": {
+      "COD": 8,
+      "DSA": 9,
+      "OOD": 8,
+      "APTI": 9,
+      "COMM": 8,
+      "AI": 5,
+      "CLOUD": 6,
+      "SQL": 9,
+      "SWE": 8,
+      "SYSD": 7,
+      "NETW": 7,
+      "OS": 7
+    },
+    "weights": {
+      "COD": 1.3,
+      "DSA": 1.4,
+      "OOD": 1.1,
+      "APTI": 1.3,
+      "COMM": 1.1,
+      "AI": 0.8,
+      "CLOUD": 0.9,
+      "SQL": 1.4,
+      "SWE": 1.1,
+      "SYSD": 1.1,
+      "NETW": 1.0,
+      "OS": 1.0
+    },
+    "mandatory_competencies": ["COD", "DSA", "SQL"]
+  },
   "Oracle Financial Services Software": {
     "required_levels": {
       "COD": 7,

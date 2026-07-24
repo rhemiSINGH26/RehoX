@@ -150,7 +150,11 @@ ${text.slice(0, 15000)}`;
     try {
       const completion = await groq.chat.completions.create({
         messages: [
-          { role: "system", content: "You are an expert HR AI assistant that outputs raw JSON strictly matching the requested schema." },
+          {
+            role: "system",
+            content:
+              "You are an expert HR AI assistant that outputs raw JSON strictly matching the requested schema.",
+          },
           { role: "user", content: prompt },
         ],
         model: "llama-3.3-70b-versatile",
@@ -207,9 +211,13 @@ ${text.slice(0, 15000)}`;
         projects: Array.isArray(partial.projects) ? (partial.projects as string[]) : [],
         experience: Array.isArray(partial.experience) ? (partial.experience as string[]) : [],
         internships: Array.isArray(partial.internships) ? (partial.internships as string[]) : [],
-        certifications: Array.isArray(partial.certifications) ? (partial.certifications as string[]) : [],
+        certifications: Array.isArray(partial.certifications)
+          ? (partial.certifications as string[])
+          : [],
         hackathons: Array.isArray(partial.hackathons) ? (partial.hackathons as string[]) : [],
-        preferred_roles: Array.isArray(partial.preferred_roles) ? (partial.preferred_roles as string[]) : [],
+        preferred_roles: Array.isArray(partial.preferred_roles)
+          ? (partial.preferred_roles as string[])
+          : [],
         skills,
       };
     }

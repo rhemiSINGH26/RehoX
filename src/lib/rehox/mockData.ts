@@ -115,7 +115,7 @@ What We're Looking For:
 - Proficiency in at least one object-oriented or systems programming language such as C++, Java, or Python.
 - Deep understanding of Operating System (OS) internals, memory management, and Linux environment.
 - Demonstrated experience in Object-Oriented Design (OOD) and distributed systems architecture.
-- Excellent written and verbal communication skills.`
+- Excellent written and verbal communication skills.`,
   },
   "google_ds.pdf": {
     company: "Google",
@@ -138,7 +138,7 @@ What We're Looking For:
 - Advanced SQL proficiency against large-scale enterprise data warehouses.
 - Strong foundation in Applied Machine Learning, Deep Learning, and Artificial Intelligence (AI).
 - Experience working with Cloud Platforms (GCP, AWS, or Azure).
-- Exceptional communication skills to present insights clearly.`
+- Exceptional communication skills to present insights clearly.`,
   },
   "microsoft_swe.pdf": {
     company: "Microsoft",
@@ -161,7 +161,7 @@ What We're Looking For:
 - Hands-on experience with Microsoft Azure cloud services.
 - Solid understanding of Distributed Systems design, API development, and solid DSA fundamentals.
 - Practical experience with relational databases, specifically SQL Server.
-- Familiarity with modern Software Engineering (SWE) practices including Git, CI/CD, and unit testing.`
+- Familiarity with modern Software Engineering (SWE) practices including Git, CI/CD, and unit testing.`,
   },
   "microsoft_da.pdf": {
     company: "Microsoft",
@@ -184,7 +184,7 @@ What We're Looking For:
 - Extensive experience building executive dashboards in Power BI.
 - Strong numerical aptitude, statistical analysis, and Excel mastery.
 - Excellent communication skills to work across cross-functional teams.
-- Familiarity with Azure Data services (Synapse, Data Factory) is a plus.`
+- Familiarity with Azure Data services (Synapse, Data Factory) is a plus.`,
   },
   "ofss_ase.pdf": {
     company: "Oracle Financial Services Software",
@@ -207,7 +207,7 @@ What We're Looking For:
 - Advanced knowledge of Oracle SQL and PL/SQL.
 - Solid understanding of Object-Oriented Design (OOD) in banking software.
 - High quantitative aptitude and analytical thinking.
-- Good verbal and written communication skills for client-facing interaction.`
+- Good verbal and written communication skills for client-facing interaction.`,
   },
   "ofss_asa.pdf": {
     company: "Oracle Financial Services Software",
@@ -230,8 +230,8 @@ What We're Looking For:
 - Strong SQL diagnostic and querying skills.
 - Basic understanding of networking protocols and infrastructure topologies.
 - Ability to read and patch existing Java code modules.
-- Logical debugging aptitude and strong client-facing communication skills.`
-  }
+- Logical debugging aptitude and strong client-facing communication skills.`,
+  },
 };
 
 export interface SampleResume extends ParsedSource {

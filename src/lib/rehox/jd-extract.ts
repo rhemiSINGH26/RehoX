@@ -6,13 +6,38 @@ import type { ParsedSource, Skill, CategoryCode } from "./types";
 // ── Zod schema matching the shared data contract ────────────────────────────
 
 const VALID_CATEGORY_CODES: CategoryCode[] = [
-  "DSA", "COD", "OOD", "APTI", "COMM", "AI",
-  "CLOUD", "SQL", "SWE", "SYSD", "NETW", "OS", "OTHER",
+  "DSA",
+  "COD",
+  "OOD",
+  "APTI",
+  "COMM",
+  "AI",
+  "CLOUD",
+  "SQL",
+  "SWE",
+  "SYSD",
+  "NETW",
+  "OS",
+  "OTHER",
 ];
 
 const SkillSchema = z.object({
   skill_name: z.string(),
-  category_code: z.enum(["DSA", "COD", "OOD", "APTI", "COMM", "AI", "CLOUD", "SQL", "SWE", "SYSD", "NETW", "OS", "OTHER"]),
+  category_code: z.enum([
+    "DSA",
+    "COD",
+    "OOD",
+    "APTI",
+    "COMM",
+    "AI",
+    "CLOUD",
+    "SQL",
+    "SWE",
+    "SYSD",
+    "NETW",
+    "OS",
+    "OTHER",
+  ]),
   evidence: z.string(),
   confidence: z.enum(["high", "medium", "low"]),
 });
@@ -101,7 +126,11 @@ ${text.slice(0, 15000)}`;
     try {
       const completion = await groq.chat.completions.create({
         messages: [
-          { role: "system", content: "You are an expert HR AI assistant that outputs raw JSON strictly matching the requested schema." },
+          {
+            role: "system",
+            content:
+              "You are an expert HR AI assistant that outputs raw JSON strictly matching the requested schema.",
+          },
           { role: "user", content: prompt },
         ],
         model: "llama-3.3-70b-versatile",

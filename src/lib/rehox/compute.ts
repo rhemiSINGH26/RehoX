@@ -75,7 +75,10 @@ function getGapSeverity(required_level: number, candidate_level: number): GapSev
   return "critical";
 }
 
-function getReadinessBand(score: number, mandatoryShortfalls: number): TalentCheckResult["readiness_band"] {
+function getReadinessBand(
+  score: number,
+  mandatoryShortfalls: number,
+): TalentCheckResult["readiness_band"] {
   if (score >= 80 && mandatoryShortfalls === 0) return "Interview Ready";
   if (score >= 65) return "Nearly Ready";
   if (score >= 45) return "Developing";
@@ -103,11 +106,15 @@ function buildExplanation(
  * 3. Compares candidate levels against required levels to compute readiness score.
  */
 export function runTalentCheck(
-  profile: { competency_levels?: Partial<Record<TalentCheckCategoryCode, number>>; skills?: Skill[] },
+  profile: {
+    competency_levels?: Partial<Record<TalentCheckCategoryCode, number>>;
+    skills?: Skill[];
+  },
   company?: string,
 ): TalentCheckResult {
   const resolvedCompany = resolveCompanyName(company ?? "") || COMPANIES[0];
-  const expectation = getCompanyExpectation(resolvedCompany) || getCompanyExpectation(COMPANIES[0])!;
+  const expectation =
+    getCompanyExpectation(resolvedCompany) || getCompanyExpectation(COMPANIES[0])!;
 
   let levels: CompetencyLevels;
   if (profile.competency_levels && Object.keys(profile.competency_levels).length > 0) {
@@ -143,12 +150,13 @@ export function runTalentCheck(
 
   const totalWeight = rows.reduce((sum, row) => sum + (row.importance_weight ?? 1), 0);
   const weightedCoverage = rows.reduce(
-    (sum, row) => sum + Math.min(row.candidate_level / row.required_level, 1) * (row.importance_weight ?? 1),
+    (sum, row) =>
+      sum + Math.min(row.candidate_level / row.required_level, 1) * (row.importance_weight ?? 1),
     0,
   );
 
   let score = Math.round((weightedCoverage / totalWeight) * 100);
-  let mandatoryShortfalls = rows.filter(
+  const mandatoryShortfalls = rows.filter(
     (row) => mandatoryCompetencies.has(row.category_code) && row.gap,
   ).length;
 
@@ -174,7 +182,12 @@ export function runTalentCheck(
     skillset_gap: rows,
     readiness_score: score,
     readiness_band,
-    explanation: buildExplanation(score, rows.filter((row) => row.gap).length, mandatoryShortfalls, topPriorities[0]),
+    explanation: buildExplanation(
+      score,
+      rows.filter((row) => row.gap).length,
+      mandatoryShortfalls,
+      topPriorities[0],
+    ),
     top_priorities: topPriorities,
   };
 }

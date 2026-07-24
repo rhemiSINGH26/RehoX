@@ -1,4 +1,4 @@
-import React from "react";
+import { useId } from "react";
 
 interface Props {
   score: number; // 0 - 100
@@ -13,6 +13,10 @@ export function ReadinessGaugeRing({
   label = "Readiness Score",
   sublabel = "out of 100",
 }: Props) {
+  const rawId = useId();
+  const safeId = rawId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const gradientId = `gauge-grad-${safeId}`;
+
   const strokeWidth = 14;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -62,7 +66,7 @@ export function ReadinessGaugeRing({
         className="transform -rotate-90 drop-shadow-md"
       >
         <defs>
-          <linearGradient id={`gauge-grad-${score}`} x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor={theme.gradient[0]} />
             <stop offset="100%" stopColor={theme.gradient[1]} />
           </linearGradient>
@@ -85,7 +89,7 @@ export function ReadinessGaugeRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={`url(#gauge-grad-${score})`}
+          stroke={`url(#${gradientId})`}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}

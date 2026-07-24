@@ -1,6 +1,7 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
+import { fetchAnalysesFromSupabase } from "@/lib/rehox/supabase";
 import type { ReactNode } from "react";
 
 const NODES = [
@@ -15,15 +16,30 @@ const NODES = [
 
 function Wordmark() {
   return (
-    <Link to="/" className="group flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-ink-text">
+    <Link
+      to="/"
+      className="group flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-ink-text"
+    >
       <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-brass/40 bg-gradient-to-br from-brass/20 to-brass/5 shadow-sm group-hover:border-brass transition-colors">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brass">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-brass"
+        >
           <circle cx="12" cy="12" r="9" strokeOpacity="0.4" />
           <path d="M12 3v3m0 12v3M3 12h3m12 0h3" />
           <circle cx="12" cy="12" r="3" fill="currentColor" />
         </svg>
       </div>
-      <span>Reho<span className="text-brass">X</span></span>
+      <span>
+        Reho<span className="text-brass">X</span>
+      </span>
     </Link>
   );
 }
@@ -31,6 +47,7 @@ function Wordmark() {
 function Pipeline() {
   const userSession = useRehox((s) => s.userSession);
   const { jd, resume, profile, talentCheck, skillMatch } = useRehox((s) => s);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (!userSession) {
     return (
@@ -50,10 +67,12 @@ function Pipeline() {
     report: !!(talentCheck || skillMatch),
     ats: !!profile,
   };
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <nav aria-label="RehoX pipeline" className="flex items-center gap-2 md:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <nav
+      aria-label="RehoX pipeline"
+      className="flex items-center gap-2 md:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+    >
       {NODES.map((n, i) => {
         const active = ready[n.key as keyof typeof ready];
         const current = pathname === n.to;
@@ -104,6 +123,16 @@ function UserBadge() {
 
   const [showDrawer, setShowDrawer] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const navigate = useNavigate();
+
+  // Load initial saved flow history from Supabase DB
+  useEffect(() => {
+    fetchAnalysesFromSupabase().then((analyses) => {
+      if (analyses.length > 0) {
+        rehoxStore.set({ savedAnalyses: analyses });
+      }
+    });
+  }, []);
 
   if (!userSession) {
     return (
@@ -116,8 +145,12 @@ function UserBadge() {
     );
   }
 
-  const rawName = userSession.name || profile?.name || resume?.name || (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
-  
+  const rawName =
+    userSession.name ||
+    profile?.name ||
+    resume?.name ||
+    (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
+
   const initials = rawName
     ? rawName
         .split(" ")
@@ -132,12 +165,13 @@ function UserBadge() {
   function handleSaveAnalysis() {
     rehoxStore.saveCurrentAnalysis();
     setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 1500);
+    setTimeout(() => setSaveSuccess(false), 2000);
   }
 
   function handleLogout() {
     rehoxStore.logout();
     setShowDrawer(false);
+    navigate({ to: "/" });
   }
 
   return (

@@ -1,4 +1,4 @@
-import React from "react";
+import { useId } from "react";
 import { CATEGORY_ORDER, CATEGORY_LABEL, type CategoryCode } from "@/lib/rehox/types";
 
 interface RadarDatum {
@@ -14,6 +14,13 @@ interface Props {
 }
 
 export function RADIXRadarChart({ data, size = 480, showLegend = true }: Props) {
+  const rawId = useId();
+  const safeId = rawId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const candGradId = `candidate-grad-${safeId}`;
+  const reqGradId = `required-grad-${safeId}`;
+  const glowCandId = `glow-candidate-${safeId}`;
+  const glowBrassId = `glow-brass-${safeId}`;
+
   const cx = size / 2;
   const cy = size / 2;
   const radius = size * 0.38;
@@ -21,7 +28,9 @@ export function RADIXRadarChart({ data, size = 480, showLegend = true }: Props) 
   const totalSpokes = 12;
 
   const byCode = new Map(data.map((d) => [d.code, d]));
-  const ordered = CATEGORY_ORDER.map((c) => byCode.get(c) ?? { code: c, required: 5, candidate: 0 });
+  const ordered = CATEGORY_ORDER.map(
+    (c) => byCode.get(c) ?? { code: c, required: 5, candidate: 0 },
+  );
 
   // Calculate spoke angle (-90deg at top, clockwise)
   const getCoordinates = (index: number, levelValue: number) => {
@@ -34,15 +43,19 @@ export function RADIXRadarChart({ data, size = 480, showLegend = true }: Props) 
   };
 
   // Build SVG polygon points
-  const candidatePoints = ordered.map((d, i) => {
-    const pt = getCoordinates(i, d.candidate);
-    return `${pt.x},${pt.y}`;
-  }).join(" ");
+  const candidatePoints = ordered
+    .map((d, i) => {
+      const pt = getCoordinates(i, d.candidate);
+      return `${pt.x},${pt.y}`;
+    })
+    .join(" ");
 
-  const requiredPoints = ordered.map((d, i) => {
-    const pt = getCoordinates(i, d.required);
-    return `${pt.x},${pt.y}`;
-  }).join(" ");
+  const requiredPoints = ordered
+    .map((d, i) => {
+      const pt = getCoordinates(i, d.required);
+      return `${pt.x},${pt.y}`;
+    })
+    .join(" ");
 
   return (
     <div className="relative flex flex-col items-center">
@@ -55,22 +68,22 @@ export function RADIXRadarChart({ data, size = 480, showLegend = true }: Props) 
         aria-label="RADIX 12-Category Competency Radar Chart"
       >
         <defs>
-          <linearGradient id="candidate-grad" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={candGradId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#10b981" stopOpacity="0.45" />
             <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.25" />
           </linearGradient>
 
-          <linearGradient id="required-grad" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={reqGradId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#c98a3e" stopOpacity="0.15" />
             <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.05" />
           </linearGradient>
 
-          <filter id="glow-candidate" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id={glowCandId} x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
 
-          <filter id="glow-brass" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id={glowBrassId} x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
@@ -126,22 +139,22 @@ export function RADIXRadarChart({ data, size = 480, showLegend = true }: Props) 
         {/* Required Target Polygon (Gold Dashed) */}
         <polygon
           points={requiredPoints}
-          fill="url(#required-grad)"
+          fill={`url(#${reqGradId})`}
           stroke="#c98a3e"
           strokeWidth={2}
           strokeDasharray="4 3"
           strokeOpacity={0.85}
-          filter="url(#glow-brass)"
+          filter={`url(#${glowBrassId})`}
         />
 
         {/* Candidate Capability Polygon (Green/Blue Gradient Fill) */}
         <polygon
           points={candidatePoints}
-          fill="url(#candidate-grad)"
+          fill={`url(#${candGradId})`}
           stroke="#10b981"
           strokeWidth={2.5}
           strokeLinejoin="round"
-          filter="url(#glow-candidate)"
+          filter={`url(#${glowCandId})`}
           className="transition-all duration-700 ease-out"
         />
 

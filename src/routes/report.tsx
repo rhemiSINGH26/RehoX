@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { generateCareerActionPlan, getCompanyStrategy } from "@/lib/rehox/recommendations";
+import { runTalentCheck } from "@/lib/rehox/compute";
 import { useRehox } from "@/lib/rehox/store";
-import { generateCareerActionPlan } from "@/lib/rehox/recommendations";
 import { CATEGORY_LABEL } from "@/lib/rehox/types";
 import { EmptyState } from "./talent-check";
 
@@ -9,7 +10,11 @@ export const Route = createFileRoute("/report")({
   head: () => ({
     meta: [
       { title: "AI Eligibility & Recommendations Report · RehoX" },
-      { name: "description", content: "Executive AI readiness verdict, gap feedback, certifications, and practice problems." },
+      {
+        name: "description",
+        content:
+          "Executive AI readiness verdict, gap feedback, certifications, and practice problems.",
+      },
     ],
   }),
   component: ReportPage,
@@ -18,17 +23,35 @@ export const Route = createFileRoute("/report")({
 export function ReportPage() {
   const profile = useRehox((s) => s.profile);
   const jd = useRehox((s) => s.jd);
-  const talentCheck = useRehox((s) => s.talentCheck);
+  const storedTalentCheck = useRehox((s) => s.talentCheck);
   const skillMatch = useRehox((s) => s.skillMatch);
 
-  const targetCompany = jd?.company || talentCheck?.company || "Target Tech Company";
-  const targetRole = jd?.role || profile?.preferred_roles[0] || "Software Engineer";
+  const targetCompany =
+    jd?.company && jd.company !== "Unknown"
+      ? jd.company
+      : storedTalentCheck?.company && storedTalentCheck.company !== "Unknown"
+        ? storedTalentCheck.company
+        : "Target Tech Company";
 
-  const gaps = talentCheck?.skillset_gap || [];
+  const targetRole = jd?.role || profile?.preferred_roles?.[0] || "Software Engineer";
+
+  // Re-compute talent check specifically for target company
+  const dynamicTalentCheck = useMemo(() => {
+    if (!profile) return storedTalentCheck;
+    return runTalentCheck(
+      { competency_levels: profile.competency_levels, skills: profile.skills },
+      targetCompany,
+    );
+  }, [profile, targetCompany, storedTalentCheck]);
+
+  const talentCheck = dynamicTalentCheck ?? storedTalentCheck;
+
   const actionPlan = useMemo(
-    () => generateCareerActionPlan(gaps, targetCompany),
-    [gaps, targetCompany]
+    () => generateCareerActionPlan(talentCheck?.skillset_gap || [], targetCompany),
+    [talentCheck?.skillset_gap, targetCompany],
   );
+
+  const companyStrategy = useMemo(() => getCompanyStrategy(targetCompany), [targetCompany]);
 
   if (!profile) {
     return (
@@ -43,17 +66,30 @@ export function ReportPage() {
 
   const score = talentCheck?.readiness_score ?? skillMatch?.match_score ?? 70;
   const isEligible = score >= 75;
-  const verdictText = score >= 80 ? "High Eligibility — Strong Target Fit" : score >= 65 ? "Moderate Eligibility — Nearly Ready" : "Developing Candidate — Action Required";
+  const verdictText =
+    score >= 80
+      ? `High Eligibility — Strong ${targetCompany} Target Fit`
+      : score >= 65
+        ? `Moderate Eligibility — Nearly Ready for ${targetCompany}`
+        : `Developing Candidate — Target Deficits for ${targetCompany}`;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Step 06 · AI Career & Eligibility Report</div>
-          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Readiness & Skill Action Plan</h1>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">
+            Step 06 · AI Career & Eligibility Report
+          </div>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">
+            Readiness & Skill Action Plan
+          </h1>
           <p className="mt-1 text-xs text-muted-text">
-            Evaluation target: <strong className="text-ink-text font-medium">{targetCompany !== "Unknown" ? `${targetCompany} — ` : ""}{targetRole}</strong>
+            Evaluation target:{" "}
+            <strong className="text-ink-text font-medium">
+              {targetCompany !== "Unknown" ? `${targetCompany} — ` : ""}
+              {targetRole}
+            </strong>
           </p>
         </div>
 
@@ -66,15 +102,17 @@ export function ReportPage() {
       </div>
 
       {/* AI Verdict Hero Banner */}
-      <div className={`rounded-3xl border p-6 space-y-4 shadow-xl backdrop-blur-md ${
-        isEligible
-          ? "border-emerald-500/40 bg-gradient-to-br from-panel/90 via-panel/60 to-emerald-500/10"
-          : "border-amber-500/40 bg-gradient-to-br from-panel/90 via-panel/60 to-amber-500/10"
-      }`}>
+      <div
+        className={`rounded-3xl border p-6 space-y-4 shadow-xl backdrop-blur-md ${
+          isEligible
+            ? "border-emerald-500/40 bg-gradient-to-br from-panel/90 via-panel/60 to-emerald-500/10"
+            : "border-amber-500/40 bg-gradient-to-br from-panel/90 via-panel/60 to-amber-500/10"
+        }`}
+      >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/40 pb-4">
           <div className="space-y-1">
             <span className="mono text-[11px] uppercase tracking-widest text-brass font-bold">
-              AI Candidate Verdict
+              AI Candidate Verdict for {targetCompany}
             </span>
             <h2 className="font-display text-2xl font-bold text-ink-text flex items-center gap-2.5">
               <span>{verdictText}</span>
@@ -95,6 +133,41 @@ export function ReportPage() {
         </p>
       </div>
 
+      {/* Company Technical Culture & Round Strategy */}
+      <section className="rounded-2xl border border-brass/30 bg-brass/5 p-6 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-line/40 pb-3">
+          <div>
+            <span className="mono text-[10px] uppercase tracking-widest text-brass font-bold">
+              Company-Specific Strategy
+            </span>
+            <h2 className="font-display text-lg font-bold text-ink-text">
+              {targetCompany} Engineering Interview Blueprint
+            </h2>
+          </div>
+        </div>
+
+        <div className="space-y-3 text-xs">
+          <div className="rounded-xl border border-line/60 bg-panel/70 p-4 space-y-1">
+            <span className="mono text-[10px] uppercase text-brass font-bold">
+              Engineering Culture & Focus:
+            </span>
+            <p className="text-ink-text font-medium leading-relaxed">{companyStrategy.culture}</p>
+            <div className="text-muted-text pt-1 font-semibold">
+              Priority Competencies: {companyStrategy.focusArea}
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {companyStrategy.rounds.map((rnd, i) => (
+              <div key={i} className="rounded-xl border border-line/60 bg-ink/60 p-3.5 space-y-1">
+                <div className="mono text-[11px] font-bold text-brass">{rnd.title}</div>
+                <div className="text-muted-text leading-snug">{rnd.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Recommended Online Certifications */}
       <section className="rounded-2xl border border-line/60 bg-panel/50 p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between border-b border-line/40 pb-3">
@@ -102,20 +175,27 @@ export function ReportPage() {
             <span className="mono text-[10px] uppercase tracking-widest text-brass font-bold">
               Targeted Qualifications
             </span>
-            <h2 className="font-display text-lg font-bold text-ink-text">Recommended Online Certifications</h2>
+            <h2 className="font-display text-lg font-bold text-ink-text">
+              Recommended Online Certifications
+            </h2>
           </div>
           <span className="mono text-[10px] text-muted-text">Gap Category Aligned</span>
         </div>
 
         <div className="grid gap-3.5 md:grid-cols-2">
           {actionPlan.certifications.map((cert, idx) => (
-            <div key={idx} className="rounded-xl border border-line/60 bg-ink/60 p-4 space-y-2 flex flex-col justify-between shadow-sm">
+            <div
+              key={idx}
+              className="rounded-xl border border-line/60 bg-ink/60 p-4 space-y-2 flex flex-col justify-between shadow-sm"
+            >
               <div className="space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="mono rounded bg-panel px-2 py-0.5 text-[10px] font-bold text-brass border border-line">
                     {cert.category} · {CATEGORY_LABEL[cert.category]}
                   </span>
-                  <span className="mono text-[10px] uppercase text-emerald-400 font-semibold">{cert.level}</span>
+                  <span className="mono text-[10px] uppercase text-emerald-400 font-semibold">
+                    {cert.level}
+                  </span>
                 </div>
                 <h3 className="text-xs font-bold text-ink-text pt-1">{cert.title}</h3>
                 <div className="text-[11px] text-muted-text">Provider: {cert.provider}</div>
@@ -163,9 +243,15 @@ export function ReportPage() {
                     {prob.category}
                   </span>
                   <h3 className="text-xs font-bold text-ink-text">{prob.title}</h3>
-                  <span className={`mono text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                    prob.difficulty === "Easy" ? "text-emerald-400 bg-emerald-500/10" : prob.difficulty === "Medium" ? "text-amber-400 bg-amber-500/10" : "text-rose-400 bg-rose-500/10"
-                  }`}>
+                  <span
+                    className={`mono text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                      prob.difficulty === "Easy"
+                        ? "text-emerald-400 bg-emerald-500/10"
+                        : prob.difficulty === "Medium"
+                          ? "text-amber-400 bg-amber-500/10"
+                          : "text-rose-400 bg-rose-500/10"
+                    }`}
+                  >
                     {prob.difficulty}
                   </span>
                 </div>
@@ -192,13 +278,18 @@ export function ReportPage() {
             <span className="mono text-[10px] uppercase tracking-widest text-brass font-bold">
               Self-Paced Learning
             </span>
-            <h2 className="font-display text-lg font-bold text-ink-text">Curated Domain Knowledge Resources</h2>
+            <h2 className="font-display text-lg font-bold text-ink-text">
+              Curated Domain Knowledge Resources
+            </h2>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
           {actionPlan.resources.map((res, idx) => (
-            <div key={idx} className="rounded-xl border border-line/60 bg-ink/60 p-4 space-y-2 flex flex-col justify-between">
+            <div
+              key={idx}
+              className="rounded-xl border border-line/60 bg-ink/60 p-4 space-y-2 flex flex-col justify-between"
+            >
               <div>
                 <span className="mono text-[10px] font-bold text-brass bg-panel px-2 py-0.5 rounded border border-line">
                   {res.type}
