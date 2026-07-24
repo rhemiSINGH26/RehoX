@@ -13,13 +13,6 @@ interface State {
   activeAnalysisId: string | null;
 }
 
-const DEFAULT_GUEST_USER: UserSession = {
-  user_id: "guest-user",
-  email: "candidate@rehox.local",
-  name: "Candidate Session",
-  is_guest: true,
-};
-
 let state: State = {
   jd: null,
   resume: null,
@@ -27,7 +20,7 @@ let state: State = {
   talentCheck: null,
   skillMatch: null,
   profileSavedAt: null,
-  userSession: DEFAULT_GUEST_USER,
+  userSession: null, // Initially null — user must login or choose session first
   savedAnalyses: [],
   activeAnalysisId: null,
 };
@@ -97,6 +90,19 @@ export const rehoxStore = {
   createNewAnalysis: () => {
     state = {
       ...state,
+      jd: null,
+      resume: null,
+      profile: null,
+      talentCheck: null,
+      skillMatch: null,
+      activeAnalysisId: null,
+    };
+    emit();
+  },
+  logout: () => {
+    state = {
+      ...state,
+      userSession: null,
       jd: null,
       resume: null,
       profile: null,

@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SkillDial } from "@/components/rehox/SkillDial";
 import { CATEGORY_ORDER } from "@/lib/rehox/types";
+import { useRehox } from "@/lib/rehox/store";
+import { LoginPage } from "./login";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,31 +23,38 @@ const DEMO = CATEGORY_ORDER.map((code, i) => ({
 }));
 
 function Index() {
+  const userSession = useRehox((s) => s.userSession);
+
+  // Initially render Login page if not authenticated
+  if (!userSession) {
+    return <LoginPage />;
+  }
+
   return (
-    <div className="grid gap-10 md:grid-cols-[1.1fr,1fr] md:items-center">
+    <div className="grid gap-10 md:grid-cols-[1.1fr,1fr] md:items-center animate-in fade-in duration-300">
       <section>
-        <div className="mono text-xs uppercase tracking-[0.22em] text-brass">The X to hit</div>
-        <h1 className="mt-4 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
+        <div className="mono text-xs uppercase tracking-[0.22em] text-brass font-bold">The X to hit</div>
+        <h1 className="mt-4 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl text-ink-text">
           Find out how ready<br />you actually are.
         </h1>
-        <p className="mt-5 max-w-lg text-base text-muted-text">
+        <p className="mt-5 max-w-lg text-base text-muted-text leading-relaxed">
           RehoX is built on the same 12-skillset framework and real hiring
           data used to evaluate candidates at Google, Microsoft, and Oracle
           Financial Services Software.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Link to="/resume"
-            className="rounded-md bg-brass px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:brightness-110">
-            Start with your resume
+          <Link to="/jd"
+            className="rounded-xl bg-brass px-6 py-3 text-sm font-bold text-primary-foreground transition hover:brightness-110 shadow-lg active:scale-95">
+            Start with Job Description (JD) →
           </Link>
-          <Link to="/jd" className="text-sm text-ink-text underline underline-offset-4 decoration-line hover:decoration-brass">
-            Or upload a job description first
+          <Link to="/resume" className="rounded-xl border border-line bg-ink px-6 py-3 text-sm font-semibold text-ink-text hover:border-brass transition-all">
+            Upload Resume First
           </Link>
         </div>
-        <div className="mt-10 flex gap-8 text-xs text-muted-text mono uppercase tracking-widest">
-          <div><span className="text-ink-text text-base">12</span> skillsets</div>
-          <div><span className="text-ink-text text-base">3</span> companies</div>
-          <div><span className="text-ink-text text-base">6</span> real roles</div>
+        <div className="mt-10 flex gap-8 text-xs text-muted-text mono uppercase tracking-widest font-semibold">
+          <div><span className="text-ink-text text-base font-extrabold">12</span> skillsets</div>
+          <div><span className="text-ink-text text-base font-extrabold">3</span> companies</div>
+          <div><span className="text-ink-text text-base font-extrabold">6</span> real roles</div>
         </div>
       </section>
       <section className="flex justify-center">

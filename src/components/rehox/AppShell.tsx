@@ -29,7 +29,18 @@ function Wordmark() {
 }
 
 function Pipeline() {
+  const userSession = useRehox((s) => s.userSession);
   const { jd, resume, profile, talentCheck, skillMatch } = useRehox((s) => s);
+
+  if (!userSession) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-text mono italic">
+        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+        <span>Authentication Required to Unlock Pipeline</span>
+      </div>
+    );
+  }
+
   const ready = {
     jd: !!jd,
     resume: !!resume,
@@ -40,6 +51,7 @@ function Pipeline() {
     ats: !!profile,
   };
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   return (
     <nav aria-label="RehoX pipeline" className="flex items-center gap-2 md:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {NODES.map((n, i) => {
@@ -93,7 +105,18 @@ function UserBadge() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const rawName = userSession?.name || profile?.name || resume?.name || (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
+  if (!userSession) {
+    return (
+      <Link
+        to="/login"
+        className="flex items-center gap-2 rounded-xl bg-brass px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:brightness-110 active:scale-95 transition-all"
+      >
+        <span>Sign In / Login →</span>
+      </Link>
+    );
+  }
+
+  const rawName = userSession.name || profile?.name || resume?.name || (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
   
   const initials = rawName
     ? rawName
@@ -110,6 +133,11 @@ function UserBadge() {
     rehoxStore.saveCurrentAnalysis();
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 1500);
+  }
+
+  function handleLogout() {
+    rehoxStore.logout();
+    setShowDrawer(false);
   }
 
   return (
@@ -140,13 +168,6 @@ function UserBadge() {
           </div>
         </div>
       </button>
-
-      <Link
-        to="/login"
-        className="hidden lg:block text-xs font-medium text-muted-text hover:text-ink-text mono"
-      >
-        {userSession?.is_guest ? "Login" : "Account"}
-      </Link>
 
       {/* Saved Analyses Dropdown Menu */}
       {showDrawer && (
@@ -201,13 +222,12 @@ function UserBadge() {
             >
               + New Flow
             </button>
-            <Link
-              to="/login"
-              onClick={() => setShowDrawer(false)}
-              className="rounded-lg border border-line bg-ink px-3 py-1.5 text-xs font-semibold text-center text-ink-text hover:border-brass"
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500 hover:text-white transition-all"
             >
-              Auth / Sign In
-            </Link>
+              Log Out
+            </button>
           </div>
         </div>
       )}
