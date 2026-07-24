@@ -20,58 +20,73 @@ const SkillSchema = z.object({
 const ParsedResumeSchema = z.object({
   source_type: z.literal("resume"),
   source_file: z.string(),
-  company: z.string(),
-  role: z.string(),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  company: z.string().optional(),
+  role: z.string().optional(),
   education: z.string().optional(),
   projects: z.array(z.string()).optional(),
   experience: z.array(z.string()).optional(),
+  internships: z.array(z.string()).optional(),
+  certifications: z.array(z.string()).optional(),
+  hackathons: z.array(z.string()).optional(),
+  preferred_roles: z.array(z.string()).optional(),
   skills: z.array(SkillSchema),
 });
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a talent intelligence engine. Your task is to extract structured skill data from a candidate's resume.
+const SYSTEM_PROMPT = `You are a talent intelligence engine. Your task is to extract comprehensive structured candidate data from a resume document.
 
 RADIX skill categories (use ONLY these codes):
-- COD  : Coding / Programming languages
+- COD  : Coding / Programming languages (Python, C++, Java, Go, JS/TS, etc.)
 - DSA  : Data Structures & Algorithms
 - OOD  : Object-Oriented Design & patterns
 - APTI : Quantitative Aptitude / Logical reasoning / Statistics / Math
 - COMM : Communication & collaboration / leadership
 - AI   : AI / ML / Data Science / BI tools / Analytics
-- CLOUD: Cloud platforms (AWS, GCP, Azure, etc.)
+- CLOUD: Cloud platforms (AWS, GCP, Azure, Kubernetes, etc.)
 - SQL  : SQL / Databases / Data modeling / NoSQL
-- SWE  : Software Engineering practices (CI/CD, testing, Agile, code review)
+- SWE  : Software Engineering practices (CI/CD, testing, Agile, Git)
 - SYSD : System Design / Distributed systems / Architecture
 - NETW : Networking / Protocols / TCP/IP
 - OS   : Operating Systems / Linux / Shell scripting
 - OTHER: Anything that does not fit the above
 
-Rules:
-1. Infer skills from the resume's projects, experience, and descriptions — not just a skills section.
-2. Evidence should quote or paraphrase the resume line that reveals the skill. Keep it short.
-3. Confidence:
-   - "high" = used in production work or 1+ years of experience
+Rules & Approach:
+1. Extract the candidate's full NAME and EMAIL if present in the resume.
+2. Infer skills from projects, experience, coursework, and listed skills.
+3. Evidence: quote or paraphrase the exact resume phrase revealing the skill (under 80 chars).
+4. Confidence:
+   - "high" = used in production work, internship, or 1+ years experience
    - "medium" = used in projects or coursework
    - "low"  = mentioned once or listed without context
-4. Extract role from the most recent job title or stated objective.
-5. Do not repeat the same skill_name twice.
-6. For "company", return "" (empty string) since this is a resume.
+5. Extract HIGHEST EDUCATION (degree & university/college).
+6. Extract key PROJECTS (short descriptions of main projects).
+7. Extract WORK EXPERIENCE and INTERNSHIPS (roles, company, duration).
+8. Extract CERTIFICATIONS, HACKATHONS, and PREFERRED ROLES.
+9. For "company", return "" (empty string).
 
 Output ONLY valid JSON matching this schema exactly:
 {
   "source_type": "resume",
   "source_file": "<filename>",
+  "name": "<candidate full name>",
+  "email": "<candidate email address>",
   "company": "",
-  "role": "<inferred role or most recent title>",
-  "education": "<highest degree and institution>",
-  "projects": ["<short project description>", ...],
-  "experience": ["<role at company, duration>", ...],
+  "role": "<inferred current role or primary title>",
+  "education": "<degree, major, university, graduation year>",
+  "projects": ["<project title and description>", ...],
+  "experience": ["<role, company, duration>", ...],
+  "internships": ["<internship role, company>", ...],
+  "certifications": ["<certification name>", ...],
+  "hackathons": ["<hackathon name/achievement>", ...],
+  "preferred_roles": ["<preferred target role>", ...],
   "skills": [
     {
       "skill_name": "<concise skill name>",
       "category_code": "<one of the codes above>",
-      "evidence": "<resume phrase that shows this skill>",
+      "evidence": "<quoted resume phrase>",
       "confidence": "high" | "medium" | "low"
     }
   ]
@@ -82,7 +97,7 @@ Output ONLY valid JSON matching this schema exactly:
 export const extractResumeSkills = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      text: z.string().min(50, "Resume text is too short to analyse"),
+      text: z.string().min(30, "Resume text is too short to analyse"),
       fileName: z.string(),
     }),
   )
@@ -155,11 +170,17 @@ ${text.slice(0, 15000)}`;
       return {
         source_type: "resume",
         source_file: fileName,
+        name: typeof partial.name === "string" ? partial.name : "",
+        email: typeof partial.email === "string" ? partial.email : "",
         company: "",
-        role: typeof partial.role === "string" ? partial.role : "Unknown",
+        role: typeof partial.role === "string" ? partial.role : "Software Engineer",
         education: typeof partial.education === "string" ? partial.education : undefined,
         projects: Array.isArray(partial.projects) ? (partial.projects as string[]) : [],
         experience: Array.isArray(partial.experience) ? (partial.experience as string[]) : [],
+        internships: Array.isArray(partial.internships) ? (partial.internships as string[]) : [],
+        certifications: Array.isArray(partial.certifications) ? (partial.certifications as string[]) : [],
+        hackathons: Array.isArray(partial.hackathons) ? (partial.hackathons as string[]) : [],
+        preferred_roles: Array.isArray(partial.preferred_roles) ? (partial.preferred_roles as string[]) : [],
         skills,
       };
     }

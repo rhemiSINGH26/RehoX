@@ -121,7 +121,7 @@ export function ProfilePage() {
     return (
       <div className="max-w-xl mx-auto py-12 text-center space-y-6">
         <div className="rounded-xl border border-brass/40 bg-panel/50 p-8 space-y-4 shadow-lg">
-          <div className="mono text-xs uppercase tracking-widest text-brass font-bold">Step 03 · Profile Builder</div>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-bold">Profile Builder</div>
           <h1 className="font-display text-2xl font-bold text-ink-text">No Resume Parsing Data Available</h1>
           <p className="text-sm text-muted-text">
             Profile data is built directly from Resume Parsing output. Please upload or select a resume in the previous step to generate your profile.
