@@ -72,6 +72,34 @@ function Pipeline() {
   );
 }
 
+function UserBadge() {
+  const profile = useRehox((s) => s.profile);
+  const resume = useRehox((s) => s.resume);
+  const rawName = profile?.name || resume?.name || (resume?.displayName ? resume.displayName.split("—")[0].trim() : "");
+  
+  const initials = rawName
+    ? rawName
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join("")
+    : "RX";
+
+  const label = rawName ? rawName : "candidate.local";
+
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="h-8 w-8 rounded-full border border-brass/40 bg-brass/10 grid place-items-center mono text-xs font-bold text-brass shadow-sm">
+        {initials}
+      </div>
+      <div className="hidden md:block text-xs font-medium text-ink-text mono truncate max-w-[150px]">
+        {label}
+      </div>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -81,12 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="min-w-0 md:flex-1 md:px-6">
             <Pipeline />
           </div>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full border border-line bg-panel grid place-items-center mono text-xs text-muted-text">
-              YC
-            </div>
-            <div className="hidden md:block text-xs text-muted-text mono">candidate.local</div>
-          </div>
+          <UserBadge />
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">{children}</main>

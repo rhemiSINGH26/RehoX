@@ -51,20 +51,17 @@ export function candidateLevels(skills: Skill[]): Record<CategoryCode, number> {
 
 export function validateCompetencyLevels(
   levels: Partial<Record<TalentCheckCategoryCode, unknown>> | undefined,
+  skills?: Skill[],
 ): CompetencyLevels {
-  if (!levels) {
-    throw new Error("Candidate profile is missing competency_levels for Talent Check.");
+  let sourceLevels = levels;
+  if ((!sourceLevels || Object.keys(sourceLevels).length === 0) && skills && skills.length > 0) {
+    sourceLevels = candidateLevels(skills);
   }
 
   const validatedLevels = {} as CompetencyLevels;
   for (const category of CATEGORY_ORDER) {
-    const level = levels[category];
-    if (!Number.isInteger(level) || level < 1 || level > 10) {
-      throw new Error(
-        `Candidate competency level for ${category} must be an integer from 1 to 10.`,
-      );
-    }
-    validatedLevels[category] = level;
+    const val = Number(sourceLevels?.[category] ?? 5);
+    validatedLevels[category] = Math.max(1, Math.min(10, Math.round(isNaN(val) ? 5 : val)));
   }
 
   return validatedLevels;
@@ -96,39 +93,36 @@ function buildExplanation(
     mandatoryShortfalls === 0
       ? "No mandatory competency fell below target."
       : `${mandatoryShortfalls} mandatory competency${mandatoryShortfalls === 1 ? "" : "ies"} remain below target.`;
-  return `Weighted score ${score}/100 uses company-specific weights, with Coding and DSA treated as mandatory competencies. ${gapCount} gap${gapCount === 1 ? "" : "s"} remain, and ${mandatoryText} The top priority is ${topPriorityLabel}.`;
+  return `Weighted readiness score ${score}/100 based on RADIX competency framework. ${gapCount} gap${gapCount === 1 ? "" : "s"} identified. ${mandatoryText} Top focus area: ${topPriorityLabel}.`;
 }
 
 /**
  * Talent Check uses a transparent, deterministic algorithm:
- * 1. Read the company's required competency bar from the local JSON snapshot.
- * 2. Apply company-specific weights so higher-value skills influence the score more.
- * 3. Compare candidate levels against the required levels to compute a weighted readiness score.
- * 4. Mark each gap as met/minor/moderate/critical based on the size of the gap.
- * 5. Apply a soft penalty when a mandatory competency (Coding or DSA by default) remains below target.
- * 6. Rank improvement priorities using priority = weight × gap_size.
+ * 1. Reads target expectations & competency levels.
+ * 2. Applies weighted scoring so higher-value skills influence the score.
+ * 3. Compares candidate levels against required levels to compute readiness score.
  */
 export function runTalentCheck(
-  profile: Pick<Profile, "competency_levels">,
-  company: string,
+  profile: { competency_levels?: Partial<Record<TalentCheckCategoryCode, number>>; skills?: Skill[] },
+  company?: string,
 ): TalentCheckResult {
-  const resolvedCompany = resolveCompanyName(company);
-  if (!resolvedCompany) {
-    throw new Error(`Unknown company "${company}". Available companies: ${COMPANIES.join(", ")}.`);
+  const resolvedCompany = resolveCompanyName(company ?? "") || COMPANIES[0];
+  const expectation = getCompanyExpectation(resolvedCompany) || getCompanyExpectation(COMPANIES[0])!;
+
+  let levels: CompetencyLevels;
+  if (profile.competency_levels && Object.keys(profile.competency_levels).length > 0) {
+    levels = validateCompetencyLevels(profile.competency_levels, profile.skills);
+  } else {
+    const derived = candidateLevels(profile.skills || []);
+    levels = validateCompetencyLevels(derived, profile.skills);
   }
 
-  const expectation = getCompanyExpectation(resolvedCompany);
-  if (!expectation) {
-    throw new Error(`No expectations found for company "${resolvedCompany}".`);
-  }
-
-  const levels = validateCompetencyLevels(profile.competency_levels);
   const weights = getCompanyWeights(resolvedCompany);
   const mandatoryCompetencies = new Set(getMandatoryCompetencies(resolvedCompany));
 
   const rows: SkillsetGapRow[] = CATEGORY_ORDER.map((category) => {
-    const required_level = expectation.required_levels[category];
-    const candidate_level = levels[category];
+    const required_level = expectation.required_levels[category] ?? 6;
+    const candidate_level = levels[category] ?? 0;
     const gap_size = Math.max(0, required_level - candidate_level);
     const gap = gap_size > 0;
     const severity = getGapSeverity(required_level, candidate_level);
