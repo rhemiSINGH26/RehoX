@@ -1,9 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { DropZone } from "@/components/rehox/DropZone";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
 import { CATEGORY_ORDER, CATEGORY_LABEL, type CategoryCode, type Profile, type Skill } from "@/lib/rehox/types";
 import { buildCandidateProfile, normalizeSkill, cleanEvidence, mergeDuplicateSkills } from "@/lib/rehox/profileBuilder";
 import { saveProfileToSupabase } from "@/lib/rehox/supabase";
+import { fileToText } from "@/lib/rehox/file-to-text";
+import { extractResumeSkills } from "@/lib/rehox/resume-extract";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -39,11 +42,13 @@ export function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState<"basics" | "skills" | "experience" | "certs">("basics");
   const [supabaseStatus, setSupabaseStatus] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // ONLY populate data if it comes from resume parsing output
+  // Initial candidate profile calculation
   const initialProfile = useMemo(() => {
     if (resumeSource) {
-      return buildCandidateProfile(resumeSource);
+      return buildCandidateProfile({ ...resumeSource, cv_file: resumeSource.source_file });
     }
     if (storedProfile && (storedProfile.name || storedProfile.skills.length > 0)) {
       return storedProfile;
@@ -56,7 +61,7 @@ export function ProfilePage() {
   // Sync strictly when resume parsing output arrives
   useEffect(() => {
     if (resumeSource) {
-      const built = buildCandidateProfile(resumeSource);
+      const built = buildCandidateProfile({ ...resumeSource, cv_file: resumeSource.source_file });
       setProfile(built);
     }
   }, [resumeSource]);
@@ -74,6 +79,25 @@ export function ProfilePage() {
     }, 300);
     return () => clearTimeout(t);
   }, [profile]);
+
+  // Direct resume upload handler within Profile Builder
+  async function handleDirectResumeUpload(f: File) {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const text = await fileToText(f);
+      const result = await extractResumeSkills({ data: { text, fileName: f.name } });
+      rehoxStore.set({ resume: result });
+      const built = buildCandidateProfile({ ...result, cv_file: f.name });
+      setProfile(built);
+      rehoxStore.set({ profile: built, profileSavedAt: Date.now() });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setUploadError(msg);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const savedLabel = useMemo(() => {
     if (!savedAt) return "Draft mode";
@@ -116,23 +140,54 @@ export function ProfilePage() {
     nav({ to: destination });
   }
 
-  // If no resume parsing data has been provided yet
-  if (!resumeSource && !profile.name && profile.skills.length === 0) {
+  // If no resume parsing data has been provided yet, render centered upload dropzone
+  if (!resumeSource && !profile.name && profile.skills.length === 0 && !uploading) {
     return (
-      <div className="max-w-xl mx-auto py-12 text-center space-y-6">
-        <div className="rounded-xl border border-brass/40 bg-panel/50 p-8 space-y-4 shadow-lg">
+      <div className="max-w-2xl mx-auto py-8 space-y-6">
+        <div className="text-center space-y-3">
           <div className="mono text-xs uppercase tracking-widest text-brass font-bold">Profile Builder</div>
-          <h1 className="font-display text-2xl font-bold text-ink-text">No Resume Parsing Data Available</h1>
-          <p className="text-sm text-muted-text">
-            Profile data is built directly from Resume Parsing output. Please upload or select a resume in the previous step to generate your profile.
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-text md:text-4xl">
+            Build Candidate Profile from Resume
+          </h1>
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-muted-text">
+            Upload your resume document (<strong className="text-ink-text font-medium">PDF or DOCX</strong>) to extract skills, education, work experience, and automatically populate your candidate profile.
           </p>
-          <div className="pt-2">
-            <Link
-              to="/resume"
-              className="inline-flex items-center justify-center rounded-md bg-brass px-5 py-2.5 text-sm font-medium text-primary-foreground hover:brightness-110 transition-colors shadow"
-            >
-              ← Go to Resume Parsing Step
-            </Link>
+        </div>
+
+        <div className="rounded-3xl border border-line/60 bg-panel/60 p-4 shadow-xl backdrop-blur-md">
+          <DropZone
+            label="Drop PDF or DOCX resume here or click to browse"
+            onFile={handleDirectResumeUpload}
+            loading={uploading}
+            accept=".pdf,.docx,.txt"
+          />
+        </div>
+
+        {uploadError && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-400 backdrop-blur-sm shadow-md">
+            <div className="flex items-center gap-2 font-semibold">
+              <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>Resume Extraction Failed</span>
+            </div>
+            <p className="mt-1.5 text-xs text-red-300/80">{uploadError}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (uploading) {
+    return (
+      <div className="mx-auto max-w-3xl py-12">
+        <div className="rounded-3xl border border-line/60 bg-panel/80 p-10 text-ink-text shadow-2xl backdrop-blur-md">
+          <div className="flex items-center gap-4 border-b border-line/40 pb-6">
+            <div className="h-7 w-7 animate-spin rounded-full border-3 border-brass border-t-transparent" />
+            <div>
+              <h3 className="font-display text-xl font-bold">Extracting Profile Details</h3>
+              <p className="text-sm text-muted-text">Reading resume document, populating skills, education & experience…</p>
+            </div>
           </div>
         </div>
       </div>
@@ -140,14 +195,14 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
         <div>
-          <div className="mono text-xs uppercase tracking-widest text-brass">Candidate Profile Builder</div>
-          <h1 className="mt-1 font-display text-3xl font-bold">Candidate Profile</h1>
+          <div className="mono text-xs uppercase tracking-widest text-brass font-semibold">Candidate Profile Builder</div>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink-text">Candidate Profile</h1>
           <p className="mt-1 text-sm text-muted-text">
-            Generated directly from Resume Parsing output. Fill or edit remaining entries manually.
+            Extracted directly from resume parsing output. Review, edit, or add remaining fields below.
           </p>
         </div>
 
@@ -162,42 +217,53 @@ export function ProfilePage() {
           )}
           <button
             onClick={() => handleSaveAndNext("/talent-check")}
-            className="rounded-md bg-brass px-4 py-2 text-xs font-medium text-primary-foreground hover:brightness-110 transition-colors shadow-sm"
+            className="rounded-xl bg-brass px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow transition-all hover:brightness-110 active:scale-95"
           >
             Save & Continue to Talent Check →
           </button>
         </div>
       </div>
 
-      {/* Resume Source Indicator */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-panel/40 p-3.5 rounded-lg border border-line text-xs">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+      {/* Resume Source Indicator & Re-upload Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-panel/60 p-4 rounded-2xl border border-line/60 text-xs shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-ink-text font-medium">
-            Extracted from resume parsing: <code className="mono text-brass">{resumeSource?.source_file || profile.cv_file || "Uploaded Resume"}</code>
+            Active Resume Source: <code className="mono text-brass font-bold">{resumeSource?.source_file || profile.cv_file || "Uploaded Resume"}</code>
           </span>
         </div>
 
-        <Link to="/resume" className="text-xs text-brass hover:underline mono">
-          Change Resume →
-        </Link>
+        <div className="flex items-center gap-3">
+          <label className="cursor-pointer text-xs text-brass hover:underline mono font-semibold">
+            <span>↑ Upload Different Resume</span>
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleDirectResumeUpload(f);
+              }}
+            />
+          </label>
+        </div>
       </div>
 
       {/* Navigation Tab Bar */}
-      <div className="flex border-b border-line bg-panel/40 p-1 rounded-lg gap-1">
+      <div className="flex border-b border-line bg-panel/40 p-1.5 rounded-xl gap-1.5 shadow-inner">
         {[
-          { id: "basics", label: "1. Basics" },
-          { id: "skills", label: "2. Skills & Categories" },
-          { id: "experience", label: "3. Hackathons & Internships" },
+          { id: "basics", label: "1. Basics & Education" },
+          { id: "skills", label: `2. Skills (${profile.skills.length})` },
+          { id: "experience", label: `3. Experience (${profile.internships.length})` },
           { id: "certs", label: "4. Certifications & Roles" },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={[
-              "flex-1 py-2.5 px-3 text-xs font-medium rounded-md transition-colors text-center",
+              "flex-1 py-2.5 px-3 text-xs font-semibold rounded-lg transition-all text-center",
               activeTab === tab.id
-                ? "bg-brass/15 text-brass border border-brass/40 shadow-sm"
+                ? "bg-brass/20 text-brass border border-brass/40 shadow-sm"
                 : "text-muted-text hover:text-ink-text hover:bg-ink/30",
             ].join(" ")}
           >
@@ -209,13 +275,13 @@ export function ProfilePage() {
       {/* Form Content Area */}
       <div className="space-y-6">
         {activeTab === "basics" && (
-          <Section title="Basic Information" hint="Extracted from resume parsing. Edit or fill remaining fields manually.">
+          <Section title="Basic Candidate Information" hint="Extracted from resume parsing output. Edit fields manually if needed.">
             <div className="grid gap-4 md:grid-cols-2">
               <Field
                 label="Full Name"
                 value={profile.name}
                 onChange={(v) => setProfile({ ...profile, name: v })}
-                placeholder="Candidate Name"
+                placeholder="Candidate Full Name"
               />
               <div>
                 <Field
@@ -229,15 +295,15 @@ export function ProfilePage() {
                 )}
               </div>
               <Field
-                label="Education"
+                label="Education & Degree"
                 value={profile.education}
                 onChange={(v) => setProfile({ ...profile, education: v })}
                 span={2}
-                placeholder="Degree & Institution"
+                placeholder="Degree, Field of Study & Institution"
               />
 
               <div className="md:col-span-2 space-y-1.5">
-                <div className="mono text-[10px] uppercase tracking-widest text-muted-text">CV Source Document</div>
+                <div className="mono text-[10px] uppercase tracking-widest text-muted-text">CV Source Document Name</div>
                 <input
                   type="text"
                   value={profile.cv_file}
@@ -251,39 +317,39 @@ export function ProfilePage() {
         )}
 
         {activeTab === "skills" && (
-          <Section title="Normalized Candidate Skills" hint="Categorized from resume parsing. Add or edit skills manually.">
+          <Section title="Extracted & Normalized Candidate Skills" hint="Categorized technical competencies. You can edit evidence quotes or add new skills.">
             <div className="space-y-2.5">
               {profile.skills.map((s, i) => (
                 <div
                   key={i}
-                  className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-panel/60 px-3.5 py-2.5 text-sm"
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-line/60 bg-panel/60 px-4 py-3 text-sm shadow-sm"
                 >
-                  <span className="mono rounded bg-ink px-2 py-0.5 text-[10px] font-bold tracking-widest text-brass border border-line">
+                  <span className="mono rounded-lg bg-ink px-2.5 py-1 text-[10px] font-bold tracking-widest text-brass border border-line">
                     {s.category_code}
                   </span>
 
-                  <div className="flex-1 font-medium text-ink-text min-w-[140px]">
+                  <div className="flex-1 font-semibold text-ink-text min-w-[140px]">
                     {s.skill_name}
                   </div>
 
                   <div className="flex-1 text-xs text-muted-text min-w-[200px] border-l border-line/40 pl-3">
-                    <span className="mono text-[10px] uppercase text-black/50 mr-1">Evidence:</span>
+                    <span className="mono text-[10px] uppercase text-muted-text/70 mr-1">Evidence:</span>
                     <input
                       type="text"
                       value={s.evidence}
                       onChange={(e) => updateSkillEvidence(i, e.target.value)}
-                      className="bg-transparent text-xs text-ink-text focus:outline-none hover:bg-ink/30 px-1 rounded transition-colors w-full"
+                      className="bg-transparent text-xs text-ink-text focus:outline-none hover:bg-ink/30 px-1.5 py-0.5 rounded transition-colors w-full border border-transparent focus:border-brass/40"
                     />
                   </div>
 
                   <span
                     className={[
-                      "mono text-[10px] px-2 py-0.5 rounded uppercase font-semibold",
+                      "mono text-[10px] px-2.5 py-1 rounded-full uppercase font-semibold",
                       s.confidence === "high"
-                        ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/50"
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                         : s.confidence === "medium"
-                        ? "bg-amber-950/40 text-amber-400 border border-amber-800/50"
-                        : "bg-slate-900/60 text-slate-400 border border-slate-700/50",
+                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                        : "bg-slate-500/10 text-slate-400 border border-slate-500/30",
                     ].join(" ")}
                   >
                     {s.confidence}
@@ -291,105 +357,87 @@ export function ProfilePage() {
 
                   <button
                     onClick={() => removeSkill(i)}
-                    className="text-xs text-muted-text hover:text-alert-coral transition-colors"
+                    className="text-xs text-muted-text hover:text-alert-coral transition-colors px-1"
                   >
                     remove
                   </button>
                 </div>
               ))}
               {profile.skills.length === 0 && (
-                <div className="text-sm text-muted-text italic">No skills extracted from resume. Add skills manually below.</div>
+                <div className="py-6 text-center text-xs text-muted-text">
+                  No skills listed yet. Add a skill manually below.
+                </div>
               )}
             </div>
 
-            <SkillAdder onAdd={addSkill} />
+            <AddSkillForm onAdd={addSkill} />
           </Section>
         )}
 
         {activeTab === "experience" && (
-          <Section title="Hackathons & Internships" hint="Detected from resume output. Add remaining manually if needed.">
-            <ListEditor
-              label="Hackathons"
-              items={profile.hackathons}
-              onChange={(v) => setProfile({ ...profile, hackathons: v })}
-              placeholder="e.g. Hackathon Finalist"
-              emptyNotice="No hackathons detected from resume"
-            />
-
-            <ListEditor
-              label="Internships"
-              items={profile.internships}
-              onChange={(v) => setProfile({ ...profile, internships: v })}
-              placeholder="e.g. SDE Intern"
-              emptyNotice="No internships detected from resume"
-            />
+          <Section title="Work Experience, Internships & Hackathons" hint="Extracted from resume. Add entries separated by commas.">
+            <div className="space-y-4">
+              <TagEditor
+                label="Work Experience & Internships"
+                hint="Roles, companies, and durations extracted from resume"
+                items={profile.internships}
+                onChange={(items) => setProfile({ ...profile, internships: items })}
+                placeholder="e.g. Software Engineer Intern at Google (6 mos)"
+              />
+              <TagEditor
+                label="Hackathons & Coding Competitions"
+                hint="Hackathon achievements and awards"
+                items={profile.hackathons}
+                onChange={(items) => setProfile({ ...profile, hackathons: items })}
+                placeholder="e.g. 1st Place - National Hackathon 2024"
+              />
+            </div>
           </Section>
         )}
 
         {activeTab === "certs" && (
-          <Section title="Certifications & Preferred Roles" hint="Certifications and preferred role entries.">
-            <ListEditor
-              label="Certifications"
-              items={profile.certifications}
-              onChange={(v) => setProfile({ ...profile, certifications: v })}
-              placeholder="e.g. AWS Certified"
-              emptyNotice="No certifications detected from resume"
-            />
-
-            <div className="pt-3 border-t border-line">
-              <ListEditor
-                label="Preferred Roles"
+          <Section title="Certifications & Preferred Job Roles" hint="Target positions and verified certificates.">
+            <div className="space-y-4">
+              <TagEditor
+                label="Preferred / Target Roles"
+                hint="Desired job titles or target roles"
                 items={profile.preferred_roles}
-                onChange={(v) => setProfile({ ...profile, preferred_roles: v })}
-                placeholder="e.g. Backend Engineer"
-                emptyNotice="No preferred roles specified"
+                onChange={(items) => setProfile({ ...profile, preferred_roles: items })}
+                placeholder="e.g. Backend Software Engineer"
+              />
+              <TagEditor
+                label="Certifications & Courses"
+                hint="Professional certifications and completed credentials"
+                items={profile.certifications}
+                onChange={(items) => setProfile({ ...profile, certifications: items })}
+                placeholder="e.g. AWS Certified Solutions Architect"
               />
             </div>
           </Section>
         )}
       </div>
 
-      {/* Page Actions Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-line">
-        <div className="text-xs text-muted-text mono">
-          Candidate profile automatically saved and ready for Talent Check and Skill Match.
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => handleSaveAndNext("/talent-check")}
-            className="rounded-md border border-line px-4 py-2 text-xs font-medium text-ink-text hover:border-brass transition-colors"
-          >
-            Run Talent Check →
-          </button>
-          <button
-            onClick={() => handleSaveAndNext("/skill-match")}
-            className="rounded-md bg-brass px-5 py-2 text-xs font-medium text-primary-foreground hover:brightness-110 transition-colors shadow-sm"
-          >
-            Run Skill Match →
-          </button>
-        </div>
+      {/* Save Action Banner */}
+      <div className="flex items-center justify-between border-t border-line pt-6">
+        <button
+          onClick={() => handleSaveAndNext("/talent-check")}
+          className="ml-auto rounded-xl bg-brass px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:brightness-110 active:scale-95"
+        >
+          Save Profile & Continue to Talent Check →
+        </button>
       </div>
     </div>
   );
 }
 
-function Section({
-  title,
-  hint,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-panel/30 p-6 shadow-sm space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line/40 pb-3">
-        <h2 className="font-display text-lg font-semibold text-ink-text">{title}</h2>
-        {hint && <span className="text-xs text-muted-text">{hint}</span>}
+    <div className="rounded-2xl border border-line/60 bg-panel/50 p-6 space-y-4 shadow-sm">
+      <div>
+        <h3 className="font-display text-lg font-bold text-ink-text">{title}</h3>
+        {hint && <p className="text-xs text-muted-text mt-0.5">{hint}</p>}
       </div>
-      <div>{children}</div>
+      {children}
     </div>
   );
 }
@@ -398,100 +446,106 @@ function Field({
   label,
   value,
   onChange,
-  span,
-  mono,
   placeholder,
+  span = 1,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  span?: number;
-  mono?: boolean;
   placeholder?: string;
+  span?: number;
 }) {
   return (
-    <label className={span === 2 ? "md:col-span-2" : ""}>
-      <div className="mono text-[10px] uppercase tracking-widest text-muted-text">{label}</div>
+    <div className={span === 2 ? "md:col-span-2 space-y-1.5" : "space-y-1.5"}>
+      <label className="mono text-[10px] uppercase tracking-widest text-muted-text font-semibold">{label}</label>
       <input
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={[
-          "mt-1 w-full rounded-md border border-line bg-ink px-3 py-2 text-sm text-ink-text focus:border-brass focus:outline-none transition-colors",
-          mono ? "mono" : "",
-        ].join(" ")}
+        className="w-full rounded-lg border border-line bg-ink px-3.5 py-2 text-sm text-ink-text focus:border-brass focus:outline-none transition-colors"
       />
-    </label>
+    </div>
   );
 }
 
-function ListEditor({
+function TagEditor({
   label,
+  hint,
   items,
   onChange,
   placeholder,
-  emptyNotice,
 }: {
   label: string;
+  hint?: string;
   items: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-  emptyNotice?: string;
+  onChange: (items: string[]) => void;
+  placeholder?: string;
 }) {
-  const [draft, setDraft] = useState("");
+  const [inputValue, setInputValue] = useState("");
+
+  function addItem() {
+    if (inputValue.trim()) {
+      onChange([...items, inputValue.trim()]);
+      setInputValue("");
+    }
+  }
+
+  function removeItem(index: number) {
+    onChange(items.filter((_, i) => i !== index));
+  }
+
   return (
     <div className="space-y-2">
-      <div className="mono text-[10px] uppercase tracking-widest text-muted-text">{label}</div>
-      <div className="space-y-1.5">
-        {items.map((it, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 rounded-md border border-line bg-ink px-3 py-1.5 text-sm"
+      <div className="mono text-[10px] uppercase tracking-widest text-muted-text font-semibold">{label}</div>
+      {hint && <div className="text-xs text-muted-text/80">{hint}</div>}
+
+      <div className="flex flex-wrap gap-2">
+        {items.map((item, idx) => (
+          <span
+            key={idx}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-ink/70 px-3 py-1 text-xs text-ink-text"
           >
-            <span className="flex-1 text-ink-text">{it}</span>
+            <span>{item}</span>
             <button
-              className="text-xs text-muted-text hover:text-alert-coral transition-colors"
-              onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+              onClick={() => removeItem(idx)}
+              className="text-muted-text hover:text-alert-coral transition-colors"
             >
-              remove
+              ×
             </button>
-          </div>
+          </span>
         ))}
-        {items.length === 0 && emptyNotice && (
-          <div className="text-xs text-muted-text italic px-1 py-1">{emptyNotice}</div>
-        )}
       </div>
-      <div className="flex gap-2">
+
+      <div className="flex gap-2 pt-1">
         <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addItem())}
           placeholder={placeholder}
-          className="flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm text-ink-text focus:border-brass focus:outline-none"
+          className="flex-1 rounded-lg border border-line bg-ink px-3 py-2 text-xs text-ink-text focus:border-brass focus:outline-none"
         />
         <button
-          className="rounded-md border border-line px-3 py-2 text-sm text-ink-text hover:border-brass transition-colors"
-          onClick={() => {
-            if (draft.trim()) {
-              onChange([...items, draft.trim()]);
-              setDraft("");
-            }
-          }}
+          type="button"
+          onClick={addItem}
+          className="rounded-lg bg-line/60 px-4 py-2 text-xs font-semibold text-ink-text hover:bg-brass hover:text-primary-foreground transition-all"
         >
-          Add
+          + Add
         </button>
       </div>
     </div>
   );
 }
 
-function SkillAdder({ onAdd }: { onAdd: (s: Skill) => void }) {
+function AddSkillForm({ onAdd }: { onAdd: (sk: Skill) => void }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState<CategoryCode>("COD");
-  const [confidence, setConfidence] = useState<Skill["confidence"]>("medium");
+  const [confidence, setConfidence] = useState<Skill["confidence"]>("high");
   const [evidence, setEvidence] = useState("");
 
   return (
-    <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
+    <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-line/40 pt-4">
       <div className="flex-1 min-w-[180px]">
         <div className="mono text-[10px] uppercase tracking-widest text-muted-text">Skill Name</div>
         <input

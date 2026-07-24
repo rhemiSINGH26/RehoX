@@ -280,10 +280,13 @@ export function buildCandidateProfile(input: RawResumeInput): Profile {
   // Re-deduplicate
   const finalSkills = mergeDuplicateSkills(cleanSkills);
 
-  // 3. Extract sections (NO HALLUCINATION - default to [])
-  const hackathons = detectHackathons(input);
-  const internships = detectInternships(input);
-  const certifications = detectCertifications(input);
+  // 3. Extract sections
+  let hackathons = detectHackathons(input);
+  let internships = input.internships && input.internships.length > 0 ? input.internships.map(cleanText).filter(Boolean) : detectInternships(input);
+  if (internships.length === 0 && input.experience && input.experience.length > 0) {
+    internships = input.experience.map(cleanText).filter(Boolean);
+  }
+  let certifications = detectCertifications(input);
 
   // 4. Preferred roles
   let preferred_roles: string[] = [];
