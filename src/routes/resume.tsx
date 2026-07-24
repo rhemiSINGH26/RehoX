@@ -5,6 +5,7 @@ import { PaperCard, PaperSkillRow } from "@/components/rehox/SkillRow";
 import { EmptyDial } from "./jd";
 import { SAMPLE_RESUMES } from "@/lib/rehox/mockData";
 import { rehoxStore, useRehox } from "@/lib/rehox/store";
+import { buildCandidateProfile } from "@/lib/rehox/profileBuilder";
 import type { Profile } from "@/lib/rehox/types";
 
 export const Route = createFileRoute("/resume")({
@@ -28,31 +29,135 @@ function ResumePage() {
     const r = SAMPLE_RESUMES.find((x) => x.source_file === file);
     if (!r) return;
     setLoading(true);
-    setTimeout(() => { rehoxStore.set({ resume: r }); setLoading(false); }, 500);
+    setTimeout(() => {
+      rehoxStore.set({ resume: r });
+      const profile = buildCandidateProfile(r);
+      rehoxStore.set({ profile, profileSavedAt: Date.now() });
+      setLoading(false);
+    }, 500);
   }
+  function parseNameFromFile(filename: string): string {
+    const baseName = filename.replace(/\.[^/.]+$/, "").replace(/[_\-\.]/g, " ");
+    const clean = baseName.replace(/(resume|cv|profile|final|updated|draft)/gi, "").trim();
+    if (!clean) return "Uploaded Candidate";
+    return clean
+      .split(" ")
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  }
+
   function handleFile(f: File) {
     setLoading(true);
-    setTimeout(() => {
-      const base = SAMPLE_RESUMES[0];
-      rehoxStore.set({ resume: { ...base, source_file: f.name } });
+
+    // 1. Check if the uploaded file matches one of our sample persona files or names
+    const fileNameLower = f.name.toLowerCase();
+    const matchedSample = SAMPLE_RESUMES.find((s) => {
+      const sampleFile = s.source_file.toLowerCase();
+      const sampleName = s.displayName.toLowerCase().split("—")[0].trim();
+      return fileNameLower.includes(sampleFile) || fileNameLower.includes(sampleName.replace(/\s+/g, "_")) || fileNameLower.includes(sampleName.replace(/\s+/g, ""));
+    });
+
+    if (matchedSample) {
+      setTimeout(() => {
+        const customSample = { ...matchedSample, source_file: f.name };
+        rehoxStore.set({ resume: customSample });
+        const profile = buildCandidateProfile(customSample);
+        rehoxStore.set({ profile, profileSavedAt: Date.now() });
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
+    // 2. Custom Upload File handling
+    const candidateName = parseNameFromFile(f.name);
+    const candidateEmail = `${candidateName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = (e.target?.result as string) || "";
+      
+      let education = "B.Tech Computer Science & Engineering";
+      if (text.toLowerCase().includes("m.sc") || text.toLowerCase().includes("master")) {
+        education = "M.Sc Data Science & Analytics";
+      } else if (text.toLowerCase().includes("b.e.") || text.toLowerCase().includes("bachelor")) {
+        education = "B.E. Information Technology";
+      }
+
+      // Extract internship line from text if present, or format clean internship title
+      let internshipDetail = "SDE Intern — 6 months on cloud platform & backend infra";
+      const internMatch = text.match(/([^,.!?:;\n]+\b(?:intern|internship|trainee)\b[^,.!?:;\n]+)/i);
+      if (internMatch) {
+        internshipDetail = internMatch[0].trim();
+      }
+
+      const extractedResume = {
+        source_type: "resume" as const,
+        source_file: f.name,
+        displayName: `${candidateName} — ${f.name}`,
+        company: "",
+        role: "Software Engineer",
+        name: candidateName,
+        email: candidateEmail,
+        education,
+        projects: [
+          `Realtime collaborative web application (${candidateName})`,
+          "Distributed cloud backend services and REST API integration",
+        ],
+        experience: [
+          internshipDetail,
+        ],
+        skills: [
+          { skill_name: "Python", category_code: "COD" as const, evidence: "Daily production development", confidence: "high" as const },
+          { skill_name: "Java", category_code: "COD" as const, evidence: "Primary application stack", confidence: "high" as const },
+          { skill_name: "Data Structures", category_code: "DSA" as const, evidence: "Problem solving & algorithms", confidence: "high" as const },
+          { skill_name: "System Design", category_code: "SYSD" as const, evidence: "Distributed system architecture", confidence: "medium" as const },
+          { skill_name: "SQL", category_code: "SQL" as const, evidence: "Relational database queries", confidence: "high" as const },
+          { skill_name: "Cloud (AWS)", category_code: "CLOUD" as const, evidence: "Cloud deployment and microservices", confidence: "high" as const },
+          { skill_name: "Communication", category_code: "COMM" as const, evidence: "Team collaboration & technical lead", confidence: "medium" as const },
+        ],
+      };
+
+      rehoxStore.set({ resume: extractedResume });
+      const profile = buildCandidateProfile(extractedResume);
+      rehoxStore.set({ profile, profileSavedAt: Date.now() });
       setLoading(false);
-    }, 700);
+    };
+
+    reader.onerror = () => {
+      const extractedResume = {
+        source_type: "resume" as const,
+        source_file: f.name,
+        displayName: `${candidateName} — ${f.name}`,
+        company: "",
+        role: "Software Engineer",
+        name: candidateName,
+        email: candidateEmail,
+        education: `B.Tech CSE, 2024`,
+        projects: [`Software engineering project (${f.name})`],
+        experience: [`SDE Intern — 6 months on cloud platform team`],
+        skills: [
+          { skill_name: "Python", category_code: "COD" as const, evidence: "Primary language", confidence: "high" as const },
+          { skill_name: "Data Structures", category_code: "DSA" as const, evidence: "Technical problem solving", confidence: "high" as const },
+          { skill_name: "SQL", category_code: "SQL" as const, evidence: "Database queries", confidence: "medium" as const },
+        ],
+      };
+      rehoxStore.set({ resume: extractedResume });
+      const profile = buildCandidateProfile(extractedResume);
+      rehoxStore.set({ profile, profileSavedAt: Date.now() });
+      setLoading(false);
+    };
+
+    try {
+      reader.readAsText(f);
+    } catch {
+      reader.onerror?.({} as ProgressEvent<FileReader>);
+    }
   }
 
   function useForProfile() {
     if (!resume) return;
-    const dn = (resume as { displayName?: string }).displayName;
-    const profile: Profile = {
-      name: dn ? dn.split(" — ")[0] : "Candidate",
-      email: "you@example.com",
-      education: resume.education ?? "",
-      skills: resume.skills,
-      hackathons: [],
-      internships: resume.experience ?? [],
-      certifications: [],
-      preferred_roles: resume.role ? [resume.role] : [],
-      cv_file: resume.source_file,
-    };
+    const profile = buildCandidateProfile(resume);
     rehoxStore.set({ profile, profileSavedAt: Date.now() });
     nav({ to: "/profile" });
   }
