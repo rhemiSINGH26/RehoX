@@ -168,6 +168,11 @@ export function ResumePage() {
                     ✉️ {resume.email}
                   </span>
                 )}
+                {resume.cgpa && (
+                  <span className="inline-flex items-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1 text-xs font-bold text-emerald-400">
+                    🎯 CGPA / Score: {resume.cgpa}
+                  </span>
+                )}
                 <span className="inline-flex items-center rounded-lg bg-ink/80 border border-line/60 px-3.5 py-1 mono text-[11px] text-muted-text">
                   📄 {resume.source_file}
                 </span>
@@ -203,6 +208,12 @@ export function ResumePage() {
             <p className="text-sm text-ink-text leading-relaxed font-medium">
               {resume.education || "Extracted from uploaded resume"}
             </p>
+            {resume.cgpa && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+                <span>Academic Score / Marks:</span>
+                <span>{resume.cgpa}</span>
+              </div>
+            )}
           </div>
 
           {/* Work Experience Summary Card */}

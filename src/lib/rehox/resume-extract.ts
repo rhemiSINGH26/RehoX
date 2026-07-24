@@ -25,6 +25,7 @@ const ParsedResumeSchema = z.object({
   company: z.string().optional(),
   role: z.string().optional(),
   education: z.string().optional(),
+  cgpa: z.string().optional(),
   projects: z.array(z.string()).optional(),
   experience: z.array(z.string()).optional(),
   internships: z.array(z.string()).optional(),
@@ -55,17 +56,18 @@ RADIX skill categories (use ONLY these codes):
 
 Rules & Approach:
 1. Extract the candidate's full NAME and EMAIL if present in the resume.
-2. Infer skills from projects, experience, coursework, and listed skills.
-3. Evidence: quote or paraphrase the exact resume phrase revealing the skill (under 80 chars).
-4. Confidence:
+2. Extract HIGHEST EDUCATION in detail (Degree, Major, Institution, Graduation Year, e.g. "B.Tech Computer Science, IIIT Delhi, 2024").
+3. Extract CGPA / GPA / MARKS / PERCENTAGE (e.g. "8.9 / 10 CGPA", "3.8 / 4.0 GPA", "88%"). If present anywhere in education or summary, extract it strictly. If not stated, return "".
+4. Infer skills from projects, experience, coursework, and listed skills.
+5. Evidence: quote or paraphrase the exact resume phrase revealing the skill (under 80 chars).
+6. Confidence:
    - "high" = used in production work, internship, or 1+ years experience
    - "medium" = used in projects or coursework
    - "low"  = mentioned once or listed without context
-5. Extract HIGHEST EDUCATION (degree & university/college).
-6. Extract key PROJECTS (short descriptions of main projects).
-7. Extract WORK EXPERIENCE and INTERNSHIPS (roles, company, duration).
-8. Extract CERTIFICATIONS, HACKATHONS, and PREFERRED ROLES.
-9. For "company", return "" (empty string).
+7. Extract key PROJECTS (short descriptions of main projects).
+8. Extract WORK EXPERIENCE and INTERNSHIPS (roles, company, duration).
+9. Extract CERTIFICATIONS, HACKATHONS, and PREFERRED ROLES.
+10. For "company", return "" (empty string).
 
 Output ONLY valid JSON matching this schema exactly:
 {
@@ -76,6 +78,7 @@ Output ONLY valid JSON matching this schema exactly:
   "company": "",
   "role": "<inferred current role or primary title>",
   "education": "<degree, major, university, graduation year>",
+  "cgpa": "<extracted CGPA / GPA / percentage or marks>",
   "projects": ["<project title and description>", ...],
   "experience": ["<role, company, duration>", ...],
   "internships": ["<internship role, company>", ...],
@@ -175,6 +178,7 @@ ${text.slice(0, 15000)}`;
         company: "",
         role: typeof partial.role === "string" ? partial.role : "Software Engineer",
         education: typeof partial.education === "string" ? partial.education : undefined,
+        cgpa: typeof partial.cgpa === "string" ? partial.cgpa : undefined,
         projects: Array.isArray(partial.projects) ? (partial.projects as string[]) : [],
         experience: Array.isArray(partial.experience) ? (partial.experience as string[]) : [],
         internships: Array.isArray(partial.internships) ? (partial.internships as string[]) : [],

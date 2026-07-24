@@ -4,6 +4,7 @@ export interface RawResumeInput {
   name?: string;
   email?: string;
   education?: string;
+  cgpa?: string;
   skills?: (Skill | string)[];
   projects?: string[];
   experience?: string[];
@@ -174,7 +175,6 @@ export function detectHackathons(input: RawResumeInput): string[] {
     }
   }
 
-  // Return deduplicated array or [] if nothing present (NO HALLUCINATION)
   return Array.from(new Set(detected));
 }
 
@@ -198,7 +198,6 @@ export function detectInternships(input: RawResumeInput): string[] {
     }
   }
 
-  // Return deduplicated array or [] if nothing present (NO HALLUCINATION)
   return Array.from(new Set(detected));
 }
 
@@ -223,7 +222,6 @@ export function detectCertifications(input: RawResumeInput): string[] {
   for (const item of allFields) {
     const cleaned = cleanText(item);
     if (certRegex.test(cleaned)) {
-      // If full text is too long, extract key cert phrase
       if (cleaned.length > 80) {
         const match = cleaned.match(/([^,.!?:;]+\b(?:certified|certification|certificate|aws|azure|gcp|coursera|udemy|cka|pmp)\b[^,.!?:;]+)/i);
         if (match) detected.push(cleanText(match[0]));
@@ -233,7 +231,6 @@ export function detectCertifications(input: RawResumeInput): string[] {
     }
   }
 
-  // Return deduplicated array or [] if nothing present (NO HALLUCINATION)
   return Array.from(new Set(detected));
 }
 
@@ -296,19 +293,30 @@ export function buildCandidateProfile(input: RawResumeInput): Profile {
     preferred_roles = [cleanText(input.role)];
   }
 
-  // 5. Basic info (NO HALLUCINATION)
+  // 5. Basic info & CGPA/Marks extraction
   let name = cleanText(input.name || "");
   if (!name && input.displayName) {
     name = cleanText(input.displayName.split("—")[0].split("-")[0]);
   }
   const email = cleanText(input.email || "");
   const education = cleanText(input.education || "");
+  let cgpa = cleanText(input.cgpa || "");
+
+  // If CGPA not provided separately, attempt to extract CGPA / GPA / marks pattern from education string
+  if (!cgpa && education) {
+    const match = education.match(/(\b\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?\s*(?:cgpa|gpa)?|\b(?:cgpa|gpa|marks|percentage|score|grade)[:\s]*\d+(?:\.\d+)?(?:%|\/\d+)?|\b\d+(?:\.\d+)?\s*%\s*(?:marks)?)/i);
+    if (match) {
+      cgpa = cleanText(match[0]);
+    }
+  }
+
   const cv_file = cleanText(input.cv_file || "");
 
   return {
     name,
     email,
     education,
+    cgpa,
     skills: finalSkills,
     hackathons,
     internships,

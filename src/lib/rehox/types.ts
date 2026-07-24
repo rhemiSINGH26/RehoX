@@ -26,15 +26,24 @@ export interface ParsedSource {
   role: string;
   skills: Skill[];
   // resume-only extras
+  name?: string;
+  email?: string;
   education?: string;
+  cgpa?: string;
   projects?: string[];
   experience?: string[];
+  internships?: string[];
+  certifications?: string[];
+  hackathons?: string[];
+  preferred_roles?: string[];
+  displayName?: string;
 }
 
 export interface Profile {
   name: string;
   email: string;
   education: string;
+  cgpa?: string;
   skills: Skill[];
   hackathons: string[];
   internships: string[];

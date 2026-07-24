@@ -298,8 +298,13 @@ export function ProfilePage() {
                 label="Education & Degree"
                 value={profile.education}
                 onChange={(v) => setProfile({ ...profile, education: v })}
-                span={2}
                 placeholder="Degree, Field of Study & Institution"
+              />
+              <Field
+                label="Academic Score / CGPA / Marks"
+                value={profile.cgpa || ""}
+                onChange={(v) => setProfile({ ...profile, cgpa: v })}
+                placeholder="e.g. 8.9 / 10 CGPA or 85%"
               />
 
               <div className="md:col-span-2 space-y-1.5">
